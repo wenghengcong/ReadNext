@@ -4766,6 +4766,7 @@ IMP lookUpImpOrForward(Class cls, SEL sel, id inst,
     // Use forwarding.
 
     imp = (IMP)_objc_msgForward_impcache;
+    //初始化缓存
     cache_fill(cls, sel, imp, inst);
 
  done:

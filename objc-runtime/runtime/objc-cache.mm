@@ -278,6 +278,7 @@ void bucket_t::set(cache_key_t newKey, IMP newImp)
 
 #endif
 
+/** 设置缓存列表及mask */
 void cache_t::setBucketsAndMask(struct bucket_t *newBuckets, mask_t newMask)
 {
     // objc_msgSend uses mask and buckets with no locks.
@@ -310,7 +311,9 @@ mask_t cache_t::mask()
     return _mask; 
 }
 
-mask_t cache_t::occupied() 
+
+/** 当前占用的位置 */
+mask_t cache_t::occupied()
 {
     return _occupied;
 }
@@ -327,7 +330,8 @@ void cache_t::initializeToEmpty()
 }
 
 
-mask_t cache_t::capacity() 
+/** 缓存容量大小 */
+mask_t cache_t::capacity()
 {
     return mask() ? mask()+1 : 0; 
 }
@@ -444,6 +448,11 @@ bool cache_t::canBeFreed()
 }
 
 
+/**
+ 重新分配缓存空间
+ @param oldCapacity 旧空间大小
+ @param newCapacity 新空间大小
+ */
 void cache_t::reallocate(mask_t oldCapacity, mask_t newCapacity)
 {
     bool freeOld = canBeFreed();
@@ -457,7 +466,7 @@ void cache_t::reallocate(mask_t oldCapacity, mask_t newCapacity)
 
     assert(newCapacity > 0);
     assert((uintptr_t)(mask_t)(newCapacity-1) == newCapacity-1);
-
+    //设置bucket和mask，mask= 新空间大小-1
     setBucketsAndMask(newBuckets, newCapacity - 1);
     
     if (freeOld) {
@@ -494,14 +503,21 @@ void cache_t::bad_cache(id receiver, SEL sel, Class isa)
 }
 
 
+/**
+ 寻找缓存方法
+ @param k sel
+ */
 bucket_t * cache_t::find(cache_key_t k, id receiver)
 {
     assert(k != 0);
 
-    bucket_t *b = buckets();
-    mask_t m = mask();
-    mask_t begin = cache_hash(k, m);
+    bucket_t *b = buckets();    //缓存
+    mask_t m = mask();          //缓存空间-1
+    mask_t begin = cache_hash(k, m);    //计算key对应的hash值，hash的计算方法：key & mask
     mask_t i = begin;
+    
+    //假如hash值begin未命中缓存，继续下一次尝试
+    //尝试cache_next(i, m)，下一次hash计算方法为：i-1（iOS平台）
     do {
         if (b[i].key() == 0  ||  b[i].key() == k) {
             return &b[i];
@@ -514,11 +530,14 @@ bucket_t * cache_t::find(cache_key_t k, id receiver)
 }
 
 
+/** 扩展缓存空间 */
 void cache_t::expand()
 {
     cacheUpdateLock.assertLocked();
     
     uint32_t oldCapacity = capacity();
+    //假如旧的容量大小为0，就分配4（INIT_CACHE_SIZE）
+    //旧容量大小不为0，分配当前容量的2倍
     uint32_t newCapacity = oldCapacity ? oldCapacity*2 : INIT_CACHE_SIZE;
 
     if ((uint32_t)(mask_t)newCapacity != newCapacity) {
@@ -543,20 +562,23 @@ static void cache_fill_nolock(Class cls, SEL sel, IMP imp, id receiver)
     if (cache_getImp(cls, sel)) return;
 
     cache_t *cache = getCache(cls);
-    cache_key_t key = getKey(sel);
+    cache_key_t key = getKey(sel);      //sel即为key
 
     // Use the cache as-is if it is less than 3/4 full
-    mask_t newOccupied = cache->occupied() + 1;
-    mask_t capacity = cache->capacity();
+    mask_t newOccupied = cache->occupied() + 1;     //需要新占用的位置
+    mask_t capacity = cache->capacity();            //缓存空间大小
     if (cache->isConstantEmptyCache()) {
         // Cache is read-only. Replace it.
+        //
         cache->reallocate(capacity, capacity ?: INIT_CACHE_SIZE);
     }
     else if (newOccupied <= capacity / 4 * 3) {
         // Cache is less than 3/4 full. Use it as-is.
+        // 如果下次序号小于空间的3/4，什么也不做
     }
     else {
         // Cache is too full. Expand it.
+        // 扩大缓存容量，如果当前空间不为0，则分配当前的2倍
         cache->expand();
     }
 
@@ -564,13 +586,17 @@ static void cache_fill_nolock(Class cls, SEL sel, IMP imp, id receiver)
     // There is guaranteed to be an empty slot because the 
     // minimum size is 4 and we resized at 3/4 full.
     bucket_t *bucket = cache->find(key, receiver);
+    //上一步如果没找到，key=0，新 增方法缓存
+    //上一步如果找到，其key就不会为0
     if (bucket->key() == 0) cache->incrementOccupied();
+    //不管是否找到，均设置方法缓存
     bucket->set(key, imp);
 }
 
 void cache_fill(Class cls, SEL sel, IMP imp, id receiver)
 {
 #if !DEBUG_TASK_THREADS
+    //非调试状态
     mutex_locker_t lock(cacheUpdateLock);
     cache_fill_nolock(cls, sel, imp, receiver);
 #else

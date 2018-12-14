@@ -232,7 +232,7 @@ static void call_class_loads(void)
         if (PrintLoading) {
             _objc_inform("LOAD: +[%s load]\n", cls->nameForLogging());
         }
-        //注意此处直接调用函数实现，而不是通过obj_msgSend(cls, cmd)
+        //注意此处直接调用函数实现，而不是通过objc_msgSend(cls, cmd)
         (*load_method)(cls, SEL_load);
     }
     
