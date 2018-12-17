@@ -4454,7 +4454,7 @@ static method_t *findMethodInSortedMethodList(SEL key, const method_list_t *list
     const method_t *probe;
     uintptr_t keyValue = (uintptr_t)key;
     uint32_t count;
-    
+    //二分查找
     for (count = list->count; count != 0; count >>= 1) {
         probe = base + (count >> 1);
         
@@ -4464,6 +4464,7 @@ static method_t *findMethodInSortedMethodList(SEL key, const method_list_t *list
             // `probe` is a match.
             // Rewind looking for the *first* occurrence of this value.
             // This is required for correct category overrides.
+            // 假如分类重写了，probe[-1]去寻找重写后的分类方法
             while (probe > first && keyValue == (uintptr_t)probe[-1].name) {
                 probe--;
             }
@@ -4484,15 +4485,19 @@ static method_t *findMethodInSortedMethodList(SEL key, const method_list_t *list
 * fixme
 * Locking: runtimeLock must be read- or write-locked by the caller
 **********************************************************************/
+//查找类的某个分类或类的方法列表————一维数组
 static method_t *search_method_list(const method_list_t *mlist, SEL sel)
 {
+    //在类或分类方法列表里面寻找对应的方法
     int methodListIsFixedUp = mlist->isFixedUp();
     int methodListHasExpectedSize = mlist->entsize() == sizeof(method_t);
     
     if (__builtin_expect(methodListIsFixedUp && methodListHasExpectedSize, 1)) {
+        //已排序：二分查找
         return findMethodInSortedMethodList(sel, mlist);
     } else {
         // Linear search of unsorted method list
+        // 未排序：线性遍历寻找方法
         for (auto& meth : *mlist) {
             if (meth.name == sel) return &meth;
         }
@@ -4511,7 +4516,7 @@ static method_t *search_method_list(const method_list_t *mlist, SEL sel)
 
     return nil;
 }
-
+//查找类总的方法列表————二维数组
 static method_t *
 getMethodNoSuper_nolock(Class cls, SEL sel)
 {
@@ -4520,12 +4525,13 @@ getMethodNoSuper_nolock(Class cls, SEL sel)
     assert(cls->isRealized());
     // fixme nil cls? 
     // fixme nil sel?
-
+    // 循环读取分类、类的方法列表
     for (auto mlists = cls->data()->methods.beginLists(), 
               end = cls->data()->methods.endLists(); 
          mlists != end;
          ++mlists)
     {
+        //在对应的每个类或分类中，寻找对应的方法
         method_t *m = search_method_list(*mlists, sel);
         if (m) return m;
     }
@@ -4614,6 +4620,7 @@ log_and_fill_cache(Class cls, IMP imp, SEL sel, id receiver, Class implementer)
         if (!cacheIt) return;
     }
 #endif
+    //缓存
     cache_fill (cls, sel, imp, receiver);
 }
 
@@ -4626,6 +4633,9 @@ log_and_fill_cache(Class cls, IMP imp, SEL sel, id receiver, Class implementer)
 **********************************************************************/
 IMP _class_lookupMethodAndLoadCache3(id obj, SEL sel, Class cls)
 {
+    // initialize：需要进行初始化
+    // cache：不要在缓存中查找方法
+    // resolver：需要动态方法解析
     return lookUpImpOrForward(cls, sel, obj, 
                               YES/*initialize*/, NO/*cache*/, YES/*resolver*/);
 }
@@ -4646,12 +4656,14 @@ IMP _class_lookupMethodAndLoadCache3(id obj, SEL sel, Class cls)
 IMP lookUpImpOrForward(Class cls, SEL sel, id inst, 
                        bool initialize, bool cache, bool resolver)
 {
+    //cls 一般是objcect_getClass(receiver)，即消息发送这的类对象
     IMP imp = nil;
     bool triedResolver = NO;
 
     runtimeLock.assertUnlocked();
 
     // Optimistic cache lookup
+    // 允许查找 imp 缓存
     if (cache) {
         imp = cache_getImp(cls, sel);
         if (imp) return imp;
@@ -4700,19 +4712,23 @@ IMP lookUpImpOrForward(Class cls, SEL sel, id inst,
     // Try this class's cache.
 
     imp = cache_getImp(cls, sel);
-    if (imp) goto done;
+    if (imp) goto done;     //在缓存中找到，结束查找，返回IMP
 
     // Try this class's method lists.
     {
+        //去方法列表中查找方法
         Method meth = getMethodNoSuper_nolock(cls, sel);
         if (meth) {
+            //查找到方法，缓存起来
             log_and_fill_cache(cls, meth->imp, sel, inst, cls);
             imp = meth->imp;
+            //找到方法，结束查找，返回IMP
             goto done;
         }
     }
 
     // Try superclass caches and method lists.
+    // 如果类中没有找到，尝试在父类中寻找
     {
         unsigned attempts = unreasonableClassCount();
         for (Class curClass = cls->superclass;
@@ -4724,11 +4740,13 @@ IMP lookUpImpOrForward(Class cls, SEL sel, id inst,
                 _objc_fatal("Memory corruption in class list.");
             }
             
-            // Superclass cache.
+            // Superclass cache. 从父类方法缓存中查找
             imp = cache_getImp(curClass, sel);
             if (imp) {
+                //在父类缓存中找到方法
                 if (imp != (IMP)_objc_msgForward_impcache) {
                     // Found the method in a superclass. Cache it in this class.
+                    // 将父类缓存中的方法，缓存到自身类中，结束查找
                     log_and_fill_cache(cls, imp, sel, inst, curClass);
                     goto done;
                 }
@@ -4740,7 +4758,7 @@ IMP lookUpImpOrForward(Class cls, SEL sel, id inst,
                 }
             }
             
-            // Superclass method list.
+            // Superclass method list. 父类缓存中没有找到，则查找父类的方法列表
             Method meth = getMethodNoSuper_nolock(curClass, sel);
             if (meth) {
                 log_and_fill_cache(cls, meth->imp, sel, inst, curClass);
@@ -4751,20 +4769,22 @@ IMP lookUpImpOrForward(Class cls, SEL sel, id inst,
     }
 
     // No implementation found. Try method resolver once.
-
+    // 该类需要动态方法解析，且未进行过方法解析
     if (resolver  &&  !triedResolver) {
         runtimeLock.unlockRead();
+        // 尝试动态方法解析
         _class_resolveMethod(cls, sel, inst);
         runtimeLock.read();
         // Don't cache the result; we don't hold the lock so it may have 
         // changed already. Re-do the search from scratch instead.
+        // 设置已经解析过，但是要尝试重新retry，因为未加锁，所以在动态方法解析过程中，可能有方法缓存或被添加
         triedResolver = YES;
         goto retry;
     }
 
     // No implementation found, and method resolver didn't help. 
     // Use forwarding.
-
+    // 1.方法缓存以及方法列表没找到  2. 动态方法解析也没找到 -> 3.消息转发
     imp = (IMP)_objc_msgForward_impcache;
     //初始化缓存
     cache_fill(cls, sel, imp, inst);

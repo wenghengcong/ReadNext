@@ -629,19 +629,21 @@ static void _class_resolveClassMethod(Class cls, SEL sel, id inst)
 **********************************************************************/
 static void _class_resolveInstanceMethod(Class cls, SEL sel, id inst)
 {
+    // 查找方法（不需要消息转发lookUpImpOrNil）：不需要初始化，需要在缓存中查找，且不需要进行动态方法解析
+    // 未找到，结束
     if (! lookUpImpOrNil(cls->ISA(), SEL_resolveInstanceMethod, cls, 
                          NO/*initialize*/, YES/*cache*/, NO/*resolver*/)) 
     {
         // Resolver not implemented.
         return;
     }
-
+    
     BOOL (*msg)(Class, SEL, SEL) = (__typeof__(msg))objc_msgSend;
     bool resolved = msg(cls, SEL_resolveInstanceMethod, sel);
 
     // Cache the result (good or bad) so the resolver doesn't fire next time.
     // +resolveInstanceMethod adds to self a.k.a. cls
-    IMP imp = lookUpImpOrNil(cls, sel, inst, 
+    IMP imp = lookUpImpOrNil(cls, sel, inst,
                              NO/*initialize*/, YES/*cache*/, NO/*resolver*/);
 
     if (resolved  &&  PrintResolving) {
@@ -672,16 +674,19 @@ static void _class_resolveInstanceMethod(Class cls, SEL sel, id inst)
 void _class_resolveMethod(Class cls, SEL sel, id inst)
 {
     if (! cls->isMetaClass()) {
+        // 不是元类，进行_class_resolveInstanceMethod调用
         // try [cls resolveInstanceMethod:sel]
         _class_resolveInstanceMethod(cls, sel, inst);
     } 
     else {
+        // 元类的话，进行_class_resolveClassMethod调用
         // try [nonMetaClass resolveClassMethod:sel]
         // and [cls resolveInstanceMethod:sel]
         _class_resolveClassMethod(cls, sel, inst);
         if (!lookUpImpOrNil(cls, sel, inst, 
                             NO/*initialize*/, YES/*cache*/, NO/*resolver*/)) 
         {
+            //如果类中未实现对应的类方法，继续看是否有相对应的实例方法
             _class_resolveInstanceMethod(cls, sel, inst);
         }
     }
