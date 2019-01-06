@@ -136,7 +136,7 @@ static void append_referrer(weak_entry_t *entry, objc_object **new_referrer)
     }
 
     assert(entry->out_of_line());
-
+    // 当entry大小当前的3/4，就进行扩展
     if (entry->num_refs >= TABLE_SIZE(entry) * 3/4) {
         return grow_refs_and_insert(entry, new_referrer);
     }
@@ -458,11 +458,11 @@ weak_is_registered_no_lock(weak_table_t *weak_table, id referent_id)
  * @param weak_table 
  * @param referent The object being deallocated. 
  */
-void 
-weak_clear_no_lock(weak_table_t *weak_table, id referent_id) 
+void weak_clear_no_lock(weak_table_t *weak_table, id referent_id)
 {
+    ////1. 拿到被销毁对象的指针
     objc_object *referent = (objc_object *)referent_id;
-
+    //2. 通过hash查找对象指针在weak_table中查找出对应的entry
     weak_entry_t *entry = weak_entry_for_referent(weak_table, referent);
     if (entry == nil) {
         /// XXX shouldn't happen, but does with mismatched CF/objc
@@ -471,18 +471,20 @@ weak_clear_no_lock(weak_table_t *weak_table, id referent_id)
     }
 
     // zero out references
+    // 3. 将所有的引用设置成nil
     weak_referrer_t *referrers;
     size_t count;
     
     if (entry->out_of_line()) {
+        // 3.1. 如果弱引用超过4个则将referrers数组内的弱引用都置成nil。
         referrers = entry->referrers;
         count = TABLE_SIZE(entry);
-    } 
-    else {
+    } else {
+        // 3.2. 不超过4个则将inline_referrers数组内的弱引用都置成nil
         referrers = entry->inline_referrers;
         count = WEAK_INLINE_COUNT;
     }
-    
+    // 循环设置所有的引用为nil
     for (size_t i = 0; i < count; ++i) {
         objc_object **referrer = referrers[i];
         if (referrer) {
@@ -499,7 +501,7 @@ weak_clear_no_lock(weak_table_t *weak_table, id referent_id)
             }
         }
     }
-    
+    // 4. 从weak_table中移除referent_id对应对象的entry
     weak_entry_remove(weak_table, entry);
 }
 

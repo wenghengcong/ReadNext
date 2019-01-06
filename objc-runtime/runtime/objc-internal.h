@@ -370,6 +370,10 @@ static inline objc_tag_index_t
 _objc_getTaggedPointerTag(const void * _Nullable ptr) 
 {
     // assert(_objc_isTaggedPointer(ptr));
+    //macOS:  _OBJC_TAG_INDEX_SHIFT = 1,   _OBJC_TAG_EXT_INDEX_SHIFT = 4
+    //macOS:  _OBJC_TAG_INDEX_MASK = 0x7,  _OBJC_TAG_EXT_INDEX_MASK = 0xff
+    //basicTag右移1位，取低0x7（0111）位
+    //extTag右移4位，取低0xff（1111 1111）位，即低8位
     uintptr_t basicTag = ((uintptr_t)ptr >> _OBJC_TAG_INDEX_SHIFT) & _OBJC_TAG_INDEX_MASK;
     uintptr_t extTag =   ((uintptr_t)ptr >> _OBJC_TAG_EXT_INDEX_SHIFT) & _OBJC_TAG_EXT_INDEX_MASK;
     if (basicTag == _OBJC_TAG_INDEX_MASK) {

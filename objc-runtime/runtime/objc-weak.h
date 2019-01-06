@@ -81,7 +81,10 @@ struct weak_entry_t {
     DisguisedPtr<objc_object> referent;
     union {
         struct {
-            weak_referrer_t *referrers;
+            weak_referrer_t *referrers;             // 存储对象所有弱引用的hash表
+            // 占2位，该位段与inline_referrers[1]有部分重合
+            // inline_referrers[1] 是一个经过内存对齐的地址，其最低两位总是0b00或者0b11
+            // 因此，假如out_of_line_ness == 0b10，那么就表示已经超出inline_referrers大小，要存储在referrers的hash表里
             uintptr_t        out_of_line_ness : 2;
             uintptr_t        num_refs : PTR_MINUS_2;
             uintptr_t        mask;
@@ -89,7 +92,7 @@ struct weak_entry_t {
         };
         struct {
             // out_of_line_ness field is low bits of inline_referrers[1]
-            weak_referrer_t  inline_referrers[WEAK_INLINE_COUNT];
+            weak_referrer_t  inline_referrers[WEAK_INLINE_COUNT];   // 存储对象所有弱引用的数组，大小为4
         };
     };
 

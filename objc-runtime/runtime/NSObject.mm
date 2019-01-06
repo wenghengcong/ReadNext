@@ -316,9 +316,18 @@ enum CrashIfDeallocating {
 };
 template <HaveOld haveOld, HaveNew haveNew,
           CrashIfDeallocating crashIfDeallocating>
+/*
+ HaveOld:  true - 变量有值
+          false - 需要被及时清理，当前值可能为 nil
+ HaveNew:  true - 需要被分配的新值，当前值可能为 nil
+          false - 不需要分配新值
+ CrashIfDeallocating: true - 说明 newObj 已经释放或者 newObj 不支持弱引用，该过程需要暂停
+                     false - 用 nil 替代存储
+ */
 static id 
 storeWeak(id *location, objc_object *newObj)
 {
+    //objc_initWeak: haveOld:false, haveNew:ture, crashIfDeallocating:true
     assert(haveOld  ||  haveNew);
     if (!haveNew) assert(newObj == nil);
 
@@ -332,12 +341,14 @@ storeWeak(id *location, objc_object *newObj)
     // Retry if the old value changes underneath us.
  retry:
     if (haveOld) {
+        //weak指针已经有值
         oldObj = *location;
         oldTable = &SideTables()[oldObj];
     } else {
         oldTable = nil;
     }
     if (haveNew) {
+        //weak有新值
         newTable = &SideTables()[newObj];
     } else {
         newTable = nil;
@@ -374,11 +385,13 @@ storeWeak(id *location, objc_object *newObj)
     }
 
     // Clean up old value, if any.
+    // 移除老对象weak表中的信息
     if (haveOld) {
         weak_unregister_no_lock(&oldTable->weak_table, oldObj, location);
     }
 
     // Assign new value, if any.
+    // 在新对象的weak表中建立关联
     if (haveNew) {
         newObj = (objc_object *)
             weak_register_no_lock(&newTable->weak_table, (id)newObj, location, 
@@ -391,6 +404,7 @@ storeWeak(id *location, objc_object *newObj)
         }
 
         // Do not set *location anywhere else. That would introduce a race.
+        // 弱引用指针指向新对象
         *location = (id)newObj;
     }
     else {
@@ -462,7 +476,11 @@ objc_initWeak(id *location, id newObj)
         return nil;
     }
 
-    return storeWeak<DontHaveOld, DoHaveNew, DoCrashIfDeallocating>
+    return storeWeak<
+    DontHaveOld,    //false
+    DoHaveNew,      //true
+    DoCrashIfDeallocating   //true
+    >
         (location, (objc_object*)newObj);
 }
 
@@ -703,13 +721,13 @@ class AutoreleasePoolPage
 #endif
     static size_t const COUNT = SIZE / sizeof(id);
 
-    magic_t const magic;
-    id *next;
-    pthread_t const thread;
-    AutoreleasePoolPage * const parent;
-    AutoreleasePoolPage *child;
-    uint32_t const depth;
-    uint32_t hiwat;
+    magic_t const magic;    //16
+    id *next;               //8
+    pthread_t const thread; //8
+    AutoreleasePoolPage * const parent; //8
+    AutoreleasePoolPage *child;         //8
+    uint32_t const depth;               //4
+    uint32_t hiwat;                     //4
 
     // SIZE-sizeof(*this) bytes of contents follow
 
@@ -1274,17 +1292,18 @@ objc_object::rootRelease_underflow(bool performDealloc)
 // for objects with nonpointer isa
 // that were ever weakly referenced 
 // or whose retain count ever overflowed to the side table.
-NEVER_INLINE void
-objc_object::clearDeallocating_slow()
+NEVER_INLINE void objc_object::clearDeallocating_slow()
 {
     assert(isa.nonpointer  &&  (isa.weakly_referenced || isa.has_sidetable_rc));
 
     SideTable& table = SideTables()[this];
     table.lock();
     if (isa.weakly_referenced) {
+        // 对象有weak指针指向，将会全部置为nil
         weak_clear_no_lock(&table.weak_table, (id)this);
     }
     if (isa.has_sidetable_rc) {
+        // 引用计数存储在Side Table中，对引用计数进行擦除
         table.refcnts.erase(this);
     }
     table.unlock();
@@ -1442,8 +1461,7 @@ objc_object::sidetable_subExtraRC_nolock(size_t delta_rc)
 }
 
 
-size_t 
-objc_object::sidetable_getExtraRC_nolock()
+size_t objc_object::sidetable_getExtraRC_nolock()
 {
     assert(isa.nonpointer);
     SideTable& table = SideTables()[this];
@@ -1457,8 +1475,7 @@ objc_object::sidetable_getExtraRC_nolock()
 #endif
 
 
-id
-objc_object::sidetable_retain()
+id objc_object::sidetable_retain()
 {
 #if SUPPORT_NONPOINTER_ISA
     assert(!isa.nonpointer);
@@ -1466,8 +1483,10 @@ objc_object::sidetable_retain()
     SideTable& table = SideTables()[this];
     
     table.lock();
+    // 获取 引用计数的引用
     size_t& refcntStorage = table.refcnts[this];
     if (! (refcntStorage & SIDE_TABLE_RC_PINNED)) {
+        // 如果引用计数未越界，则引用计数增加
         refcntStorage += SIDE_TABLE_RC_ONE;
     }
     table.unlock();
@@ -1580,8 +1599,7 @@ objc_object::sidetable_setWeaklyReferenced_nolock()
 // rdar://20206767
 // return uintptr_t instead of bool so that the various raw-isa 
 // -release paths all return zero in eax
-uintptr_t
-objc_object::sidetable_release(bool performDealloc)
+uintptr_t objc_object::sidetable_release(bool performDealloc)
 {
 #if SUPPORT_NONPOINTER_ISA
     assert(!isa.nonpointer);
@@ -1593,13 +1611,17 @@ objc_object::sidetable_release(bool performDealloc)
     table.lock();
     RefcountMap::iterator it = table.refcnts.find(this);
     if (it == table.refcnts.end()) {
+        // 没找到计数器，返回可以释放
         do_dealloc = true;
         table.refcnts[this] = SIDE_TABLE_DEALLOCATING;
     } else if (it->second < SIDE_TABLE_DEALLOCATING) {
+        // 计数器小于2（0、1），也返回可以释放
+        // 就是前面引用计数位都是0，后面弱引用标记位WEAKLY_REFERENCED可能有弱引用1，或者没弱引用0
         // SIDE_TABLE_WEAKLY_REFERENCED may be set. Don't change it.
         do_dealloc = true;
         it->second |= SIDE_TABLE_DEALLOCATING;
     } else if (! (it->second & SIDE_TABLE_RC_PINNED)) {
+        // 计数器大于0，未越界，引用计数减1，返回不能释放
         it->second -= SIDE_TABLE_RC_ONE;
     }
     table.unlock();
@@ -1610,8 +1632,7 @@ objc_object::sidetable_release(bool performDealloc)
 }
 
 
-void 
-objc_object::sidetable_clearDeallocating()
+void objc_object::sidetable_clearDeallocating()
 {
     SideTable& table = SideTables()[this];
 
@@ -1638,7 +1659,7 @@ objc_object::sidetable_clearDeallocating()
 #if __OBJC2__
 
 __attribute__((aligned(16)))
-id 
+id
 objc_retain(id obj)
 {
     if (!obj) return obj;
@@ -1648,8 +1669,7 @@ objc_retain(id obj)
 
 
 __attribute__((aligned(16)))
-void 
-objc_release(id obj)
+void objc_release(id obj)
 {
     if (!obj) return;
     if (obj->isTaggedPointer()) return;
@@ -1701,8 +1721,7 @@ _objc_rootIsDeallocating(id obj)
 }
 
 
-void 
-objc_clear_deallocating(id obj) 
+void objc_clear_deallocating(id obj) 
 {
     assert(obj);
 
@@ -1727,8 +1746,7 @@ _objc_rootAutorelease(id obj)
     return obj->rootAutorelease();
 }
 
-uintptr_t
-_objc_rootRetainCount(id obj)
+uintptr_t _objc_rootRetainCount(id obj)
 {
     assert(obj);
 
@@ -1834,8 +1852,7 @@ objc_allocWithZone(Class cls)
 }
 
 
-void
-_objc_rootDealloc(id obj)
+void _objc_rootDealloc(id obj)
 {
     assert(obj);
 

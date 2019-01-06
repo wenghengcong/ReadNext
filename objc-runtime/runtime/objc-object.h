@@ -395,8 +395,7 @@ objc_object::rootIsDeallocating()
 }
 
 
-inline void 
-objc_object::clearDeallocating()
+inline void objc_object::clearDeallocating()
 {
     if (slowpath(!isa.nonpointer)) {
         // Slow path for raw pointer isa.
@@ -485,7 +484,7 @@ objc_object::rootRetain(bool tryRetain, bool handleOverflow)
             ClearExclusive(&isa.bits);
             if (!tryRetain && sideTableLocked) sidetable_unlock();
             if (tryRetain) return sidetable_tryRetain() ? (id)this : nil;
-            else return sidetable_retain();
+            else return sidetable_retain(); //side table中加1
         }
         // don't check newisa.fast_rr; we already called any RR overrides
         if (slowpath(tryRetain && newisa.deallocating)) {
@@ -494,6 +493,7 @@ objc_object::rootRetain(bool tryRetain, bool handleOverflow)
             return nil;
         }
         uintptr_t carry;
+        // isa中指针extra_rc+1
         newisa.bits = addc(newisa.bits, RC_ONE, 0, &carry);  // extra_rc++
 
         if (slowpath(carry)) {
@@ -576,7 +576,7 @@ objc_object::rootRelease(bool performDealloc, bool handleUnderflow)
         if (slowpath(!newisa.nonpointer)) {
             ClearExclusive(&isa.bits);
             if (sideTableLocked) sidetable_unlock();
-            return sidetable_release(performDealloc);
+            return sidetable_release(performDealloc);       //Side Table release操作
         }
         // don't check newisa.fast_rr; we already called any RR overrides
         uintptr_t carry;
@@ -706,17 +706,16 @@ objc_object::rootAutorelease()
 }
 
 
-inline uintptr_t 
-objc_object::rootRetainCount()
+inline uintptr_t objc_object::rootRetainCount()
 {
     if (isTaggedPointer()) return (uintptr_t)this;
 
     sidetable_lock();
     isa_t bits = LoadExclusive(&isa.bits);
     ClearExclusive(&isa.bits);
-    if (bits.nonpointer) {
-        uintptr_t rc = 1 + bits.extra_rc;
-        if (bits.has_sidetable_rc) {
+    if (bits.nonpointer) {  //优化的isa指针
+        uintptr_t rc = 1 + bits.extra_rc;   //取出retainCount+1
+        if (bits.has_sidetable_rc) {        //引用计数存储在sideTable中
             rc += sidetable_getExtraRC_nolock();
         }
         sidetable_unlock();
