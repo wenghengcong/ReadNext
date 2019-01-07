@@ -1406,8 +1406,7 @@ objc_object::sidetable_moveExtraRC_nolock(size_t extra_rc,
 
 // Move some retain counts to the side table from the isa field.
 // Returns true if the object is now pinned.
-bool 
-objc_object::sidetable_addExtraRC_nolock(size_t delta_rc)
+bool objc_object::sidetable_addExtraRC_nolock(size_t delta_rc)
 {
     assert(isa.nonpointer);
     SideTable& table = SideTables()[this];
@@ -1421,14 +1420,18 @@ objc_object::sidetable_addExtraRC_nolock(size_t delta_rc)
     if (oldRefcnt & SIDE_TABLE_RC_PINNED) return true;
 
     uintptr_t carry;
+    // delta_rc = 18，将另一半引用计数存放在newRefcnt
     size_t newRefcnt = 
         addc(oldRefcnt, delta_rc << SIDE_TABLE_RC_SHIFT, 0, &carry);
     if (carry) {
+        // 有进位，表示溢出，撤销此次newRefcnt，oldRefcnt & SIDE_TABLE_FLAG_MASK（0b11）保留最低2位
+        // 再和SIDE_TABLE_RC_PINNED或，即Side Table引用计数溢出
         refcntStorage =
             SIDE_TABLE_RC_PINNED | (oldRefcnt & SIDE_TABLE_FLAG_MASK);
         return true;
     }
     else {
+        // 没有溢出，保存当前引用计数
         refcntStorage = newRefcnt;
         return false;
     }
@@ -1895,27 +1898,23 @@ _objc_rootHash(id obj)
     return (uintptr_t)obj;
 }
 
-void *
-objc_autoreleasePoolPush(void)
+void *objc_autoreleasePoolPush(void)
 {
     return AutoreleasePoolPage::push();
 }
 
-void
-objc_autoreleasePoolPop(void *ctxt)
+void objc_autoreleasePoolPop(void *ctxt)
 {
     AutoreleasePoolPage::pop(ctxt);
 }
 
 
-void *
-_objc_autoreleasePoolPush(void)
+void *_objc_autoreleasePoolPush(void)
 {
     return objc_autoreleasePoolPush();
 }
 
-void
-_objc_autoreleasePoolPop(void *ctxt)
+void _objc_autoreleasePoolPop(void *ctxt)
 {
     objc_autoreleasePoolPop(ctxt);
 }
