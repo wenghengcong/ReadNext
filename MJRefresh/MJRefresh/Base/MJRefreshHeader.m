@@ -70,9 +70,10 @@
     // 跳转到下一个控制器时，contentInset可能会变
     _scrollViewOriginalInset = self.scrollView.mj_inset;
     
-    // 当前的contentOffset，当前拖拽后的距离，如果是往上拖拽，该距离始终为contentOffset，如果用户未修改该值，一般为-64
+    // 当前的contentOffset，当前拖拽后的距离，如果是往上拖拽，该距离始终为contentOffset，如果用户未修改该值，默认是-64（20 + 44）
     // 往上拉，该值会增大，下拉，该值减少
     CGFloat offsetY = self.scrollView.mj_offsetY;
+    
     // 头部控件刚好出现的offsetY
     // scrollview刚开始的contentOffset 高度
     CGFloat happenOffsetY = - self.scrollViewOriginalInset.top;
@@ -88,11 +89,10 @@
     if (self.scrollView.isDragging) { // 如果正在拖拽
         self.pullingPercent = pullingPercent;
         if (self.state == MJRefreshStateIdle && offsetY < normal2pullingOffsetY) {
-            // 转为即将刷新状态：下拉把原本的contentOffet和Header都拉出来显示出来了，这个时候，就是要刷新了。
+            // 如果当前为默认状态 && 下拉的距离大于临界距离（将tableview下拉得很低），则将状态切换为可以刷新
             self.state = MJRefreshStatePulling;
         } else if (self.state == MJRefreshStatePulling && offsetY >= normal2pullingOffsetY) {
             // 当前正在下拉，但是下拉的距离没有超过约定的距离，将状态修改为普通。
-            // 转为普通状态
             self.state = MJRefreshStateIdle;
         }
     } else if (self.state == MJRefreshStatePulling) {// 即将刷新 && 手松开

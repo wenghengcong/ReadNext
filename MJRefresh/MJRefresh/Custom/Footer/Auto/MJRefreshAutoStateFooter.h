@@ -8,6 +8,9 @@
 
 #import "MJRefreshAutoFooter.h"
 
+/**
+ 带有状态文字的上拉刷新控件
+ */
 @interface MJRefreshAutoStateFooter : MJRefreshAutoFooter
 /** 文字距离圈圈、箭头的距离 */
 @property (assign, nonatomic) CGFloat labelLeftInset;

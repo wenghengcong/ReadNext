@@ -8,6 +8,10 @@
 
 #import "MJRefreshBackStateFooter.h"
 
+
+/**
+ 默认的上拉刷新控件
+ */
 @interface MJRefreshBackNormalFooter : MJRefreshBackStateFooter
 @property (weak, nonatomic, readonly) UIImageView *arrowView;
 /** 菊花的样式 */

@@ -8,6 +8,10 @@
 
 #import "MJRefreshAutoStateFooter.h"
 
+
+/**
+ 默认的上拉刷新控件
+ */
 @interface MJRefreshAutoNormalFooter : MJRefreshAutoStateFooter
 /** 菊花的样式 */
 @property (assign, nonatomic) UIActivityIndicatorViewStyle activityIndicatorViewStyle;

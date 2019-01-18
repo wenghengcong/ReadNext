@@ -13,8 +13,8 @@
 /**
  基础的上拉刷新控件
  */
-
 @interface MJRefreshFooter : MJRefreshComponent
+
 /** 创建footer */
 + (instancetype)footerWithRefreshingBlock:(MJRefreshComponentRefreshingBlock)refreshingBlock;
 /** 创建footer */

@@ -64,19 +64,23 @@
 {
     [super scrollViewContentSizeDidChange:change];
     
-    // 设置位置
+    // 设置位置，始终在contentSize底部
     self.mj_y = self.scrollView.mj_contentH;
 }
 
+// 当contentOffset变化的时候，就是用户在拖拽
 - (void)scrollViewContentOffsetDidChange:(NSDictionary *)change
 {
     [super scrollViewContentOffsetDidChange:change];
-    
+    // 用户在拖拽时，状态不是普通状态、未设置自动刷新，以及位置错误，均直接返回
+    // 用户在拖拽时，状态应该是普通状态，且设置了自动刷新，才会进入刷新的流程判断
     if (self.state != MJRefreshStateIdle || !self.automaticallyRefresh || self.mj_y == 0) return;
     
+
     if (_scrollView.mj_insetT + _scrollView.mj_contentH > _scrollView.mj_h) { // 内容超过一个屏幕
         // 这里的_scrollView.mj_contentH替换掉self.mj_y更为合理
         if (_scrollView.mj_offsetY >= _scrollView.mj_contentH - _scrollView.mj_h + self.mj_h * self.triggerAutomaticallyRefreshPercent + _scrollView.mj_insetB - self.mj_h) {
+            // 当底部footer完全出现，才刷新
             // 防止手松开时连续调用
             CGPoint old = [change[@"old"] CGPointValue];
             CGPoint new = [change[@"new"] CGPointValue];

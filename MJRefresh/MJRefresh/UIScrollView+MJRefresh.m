@@ -110,6 +110,7 @@ static const char MJRefreshFooterKey = '\0';
 }
 
 static const char MJRefreshReloadDataBlockKey = '\0';
+
 - (void)setMj_reloadDataBlock:(void (^)(NSInteger))mj_reloadDataBlock
 {
     [self willChangeValueForKey:@"mj_reloadDataBlock"]; // KVO

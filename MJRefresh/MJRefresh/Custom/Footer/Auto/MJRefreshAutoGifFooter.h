@@ -8,6 +8,9 @@
 
 #import "MJRefreshAutoStateFooter.h"
 
+/**
+ 带动图的上拉刷新控件
+ */
 @interface MJRefreshAutoGifFooter : MJRefreshAutoStateFooter
 @property (weak, nonatomic, readonly) UIImageView *gifView;
 

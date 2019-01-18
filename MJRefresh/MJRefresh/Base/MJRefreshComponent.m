@@ -44,8 +44,8 @@
 
 - (void)placeSubviews{}
 
-////当自己重写一个UIView的时候有可能用到这个方法,当本视图的父类视图改变的时候
-//系统会自动的执行这个方法.newSuperview是本视图的新父类视图.newSuperview有可能是nil.
+// 当自己重写一个UIView的时候有可能用到这个方法,当修改 本视图的父类视图 的时候
+// 系统会自动的执行这个方法.newSuperview是本视图的新父类视图.newSuperview有可能是nil.
 - (void)willMoveToSuperview:(UIView *)newSuperview
 {
     [super willMoveToSuperview:newSuperview];
