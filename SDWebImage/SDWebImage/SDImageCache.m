@@ -361,14 +361,20 @@
     return [self queryCacheOperationForKey:key options:options context:nil done:doneBlock];
 }
 
+
+/**
+ 从缓存中读取图片
+ */
 - (nullable NSOperation *)queryCacheOperationForKey:(nullable NSString *)key options:(SDImageCacheOptions)options context:(nullable SDWebImageContext *)context done:(nullable SDImageCacheQueryCompletionBlock)doneBlock {
     if (!key) {
+        // key为空，回调done，并且返回Operation为空
         if (doneBlock) {
             doneBlock(nil, nil, SDImageCacheTypeNone);
         }
         return nil;
     }
-    
+    // 可以传入一个id<SDImageTransformer>类型用于转换处理加载出来的图片。
+    // SDWebImage内建了1个序列转换类以及8个常用的转换类：圆角，调整大小、tint color、裁剪、翻转、旋转、模糊、滤镜
     id<SDImageTransformer> transformer = context[SDWebImageContextImageTransformer];
     if (transformer) {
         // grab the transformed disk image if transformer provided
@@ -377,7 +383,9 @@
     }
     
     // First check the in-memory cache...
+    // 首先查找内存缓存
     UIImage *image = [self imageFromMemoryCacheForKey:key];
+    // 指定在内存中查找图片时，到这里已经结束
     BOOL shouldQueryMemoryOnly = (image && !(options & SDImageCacheQueryMemoryData));
     if (shouldQueryMemoryOnly) {
         if (doneBlock) {
@@ -391,6 +399,7 @@
     // Check whether we need to synchronously query disk
     // 1. in-memory cache hit & memoryDataSync
     // 2. in-memory cache miss & diskDataSync
+    // 是否需要同步获取图片
     BOOL shouldQueryDiskSync = ((image && options & SDImageCacheQueryMemoryDataSync) ||
                                 (!image && options & SDImageCacheQueryDiskDataSync));
     void(^queryDiskBlock)(void) =  ^{
@@ -399,6 +408,7 @@
             return;
         }
         
+        // 使用自动释放池释放这里的大对象
         @autoreleasepool {
             NSData *diskData = [self diskImageDataBySearchingAllPathsForKey:key];
             UIImage *diskImage;
@@ -410,7 +420,9 @@
             } else if (diskData) {
                 cacheType = SDImageCacheTypeDisk;
                 // decode image data only if in-memory cache missed
+                // 从磁盘读取的图片
                 diskImage = [self diskImageForKey:key data:diskData options:options context:context];
+                // 如果设置为需要缓存在内存中，就将图片缓存在内存
                 if (diskImage && self.config.shouldCacheImagesInMemory) {
                     NSUInteger cost = diskImage.sd_memoryCost;
                     [self.memCache setObject:diskImage forKey:key cost:cost];
@@ -609,6 +621,10 @@
 
 #pragma mark - SDImageCache
 
+
+/**
+ 从缓存读取图片
+ */
 - (id<SDWebImageOperation>)queryImageForKey:(NSString *)key options:(SDWebImageOptions)options context:(nullable SDWebImageContext *)context completion:(nullable SDImageCacheQueryCompletionBlock)completionBlock {
     SDImageCacheOptions cacheOptions = 0;
     if (options & SDWebImageQueryMemoryData) cacheOptions |= SDImageCacheQueryMemoryData;

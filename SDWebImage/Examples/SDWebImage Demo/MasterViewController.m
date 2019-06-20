@@ -77,7 +77,7 @@
                     nil];
 
         for (int i=0; i<100; i++) {
-            [self.objects addObject:[NSString stringWithFormat:@"https://s3.amazonaws.com/fast-image-cache/demo-images/FICDDemoImage%03d.jpg", i]];
+            [self.objects addObject:[NSString stringWithFormat:@"http://img3.imgtn.bdimg.com/it/u=2922170376,2371336021&fm=26&gp=0.jpg"]];
         }
     }
     return self;

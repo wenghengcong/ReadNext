@@ -188,6 +188,9 @@ static void * SDWebImageDownloaderContext = &SDWebImageDownloaderContext;
     return [self downloadImageWithURL:url options:options context:nil progress:progressBlock completed:completedBlock];
 }
 
+/**
+ 
+ */
 - (nullable SDWebImageDownloadToken *)downloadImageWithURL:(nullable NSURL *)url
                                                    options:(SDWebImageDownloaderOptions)options
                                                    context:(nullable SDWebImageContext *)context
@@ -252,11 +255,16 @@ static void * SDWebImageDownloaderContext = &SDWebImageDownloaderContext;
     return token;
 }
 
+
+/**
+ 创建一个下载的operation
+ */
 - (nullable NSOperation<SDWebImageDownloaderOperation> *)createDownloaderOperationWithUrl:(nonnull NSURL *)url
                                                                                   options:(SDWebImageDownloaderOptions)options
                                                                                   context:(nullable SDWebImageContext *)context {
     NSTimeInterval timeoutInterval = self.config.downloadTimeout;
     if (timeoutInterval == 0.0) {
+        // 超时时间默认15s
         timeoutInterval = 15.0;
     }
     
@@ -520,6 +528,10 @@ didReceiveResponse:(NSURLResponse *)response
     return YES;
 }
 
+
+/**
+ 图片下载入口
+ */
 - (id<SDWebImageOperation>)requestImageWithURL:(NSURL *)url options:(SDWebImageOptions)options context:(SDWebImageContext *)context progress:(SDImageLoaderProgressBlock)progressBlock completed:(SDImageLoaderCompletedBlock)completedBlock {
     UIImage *cachedImage = context[SDWebImageContextLoaderCachedImage];
     

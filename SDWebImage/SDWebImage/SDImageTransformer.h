@@ -24,6 +24,7 @@ FOUNDATION_EXPORT NSString * _Nullable SDTransformedKeyForKey(NSString * _Nullab
  
  @note The transform process is called from a global queue in order to not to block the main queue.
  */
+// 用于转换处理加载出来的图片
 @protocol SDImageTransformer <NSObject>
 
 @required

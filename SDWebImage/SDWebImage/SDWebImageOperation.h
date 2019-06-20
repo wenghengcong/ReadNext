@@ -8,6 +8,10 @@
 
 #import <Foundation/Foundation.h>
 
+
+/**
+ 自定义的Operation
+ */
 @protocol SDWebImageOperation <NSObject>
 
 - (void)cancel;

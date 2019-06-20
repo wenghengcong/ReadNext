@@ -42,6 +42,7 @@ typedef NSMapTable<NSString *, id<SDWebImageOperation>> SDOperationsDictionary;
 
 - (void)sd_setImageLoadOperation:(nullable id<SDWebImageOperation>)operation forKey:(nullable NSString *)key {
     if (key) {
+        // 先取消对应的operation
         [self sd_cancelImageLoadOperationWithKey:key];
         if (operation) {
             SDOperationsDictionary *operationDictionary = [self sd_operationDictionary];
