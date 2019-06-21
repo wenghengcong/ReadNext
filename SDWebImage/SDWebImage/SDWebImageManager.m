@@ -271,12 +271,14 @@ static id<SDImageLoader> _defaultImageLoader;
         operation.loaderOperation = [self.imageLoader requestImageWithURL:url options:options context:context progress:progressBlock completed:^(UIImage *downloadedImage, NSData *downloadedData, NSError *error, BOOL finished) {
             @strongify(operation);
             if (!operation || operation.isCancelled) {
+                // Operation 取消或为空
                 // Do nothing if the operation was cancelled
                 // See #699 for more details
                 // if we would call the completedBlock, there could be a race condition between this block and another completedBlock for the same object, so if this one is called second, we will overwrite the new data
             } else if (cachedImage && options & SDWebImageRefreshCached && [error.domain isEqualToString:SDWebImageErrorDomain] && error.code == SDWebImageErrorCacheNotModified) {
                 // Image refresh hit the NSURLCache cache, do not call the completion block
             } else if (error) {
+                // Operation出错
                 [self callCompletionBlockForOperation:operation completion:completedBlock error:error url:url];
                 BOOL shouldBlockFailedURL = [self shouldBlockFailedURLWithURL:url error:error];
                 
@@ -286,12 +288,13 @@ static id<SDImageLoader> _defaultImageLoader;
                     SD_UNLOCK(self.failedURLsLock);
                 }
             } else {
+                // Operation
                 if ((options & SDWebImageRetryFailed)) {
                     SD_LOCK(self.failedURLsLock);
                     [self.failedURLs removeObject:url];
                     SD_UNLOCK(self.failedURLsLock);
                 }
-                
+                // 将图片保存到缓存
                 [self callStoreCacheProcessForOperation:operation url:url options:options context:context downloadedImage:downloadedImage downloadedData:downloadedData finished:finished progress:progressBlock completed:completedBlock];
             }
             
@@ -326,10 +329,12 @@ static id<SDImageLoader> _defaultImageLoader;
     id<SDWebImageCacheKeyFilter> cacheKeyFilter = context[SDWebImageContextCacheKeyFilter];
     NSString *key = [self cacheKeyForURL:url cacheKeyFilter:cacheKeyFilter];
     id<SDImageTransformer> transformer = context[SDWebImageContextImageTransformer];
+    // 转换需要缓存的图片格式
     id<SDWebImageCacheSerializer> cacheSerializer = context[SDWebImageContextCacheSerializer];
     if (downloadedImage && (!downloadedImage.sd_isAnimated || (options & SDWebImageTransformAnimatedImage)) && transformer) {
         dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^{
             @autoreleasepool {
+                // 将图片进行转换
                 UIImage *transformedImage = [transformer transformedImageWithImage:downloadedImage forKey:key];
                 if (transformedImage && finished) {
                     NSString *transformerKey = [transformer transformerKey];
@@ -338,10 +343,12 @@ static id<SDImageLoader> _defaultImageLoader;
                     NSData *cacheData;
                     // pass nil if the image was transformed, so we can recalculate the data from the image
                     if (cacheSerializer && (storeCacheType == SDImageCacheTypeDisk || storeCacheType == SDImageCacheTypeAll)) {
+                        // 将图片转换为缓存图片的格式
                         cacheData = [cacheSerializer cacheDataWithImage:transformedImage  originalData:(imageWasTransformed ? nil : downloadedData) imageURL:url];
                     } else {
                         cacheData = (imageWasTransformed ? nil : downloadedData);
                     }
+                    // 保存图片到缓存中
                     [self.imageCache storeImage:transformedImage imageData:cacheData forKey:cacheKey cacheType:storeCacheType completion:nil];
                 }
                 

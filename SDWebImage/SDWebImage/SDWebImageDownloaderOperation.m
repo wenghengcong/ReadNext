@@ -23,6 +23,10 @@ typedef NSMutableDictionary<NSString *, id> SDCallbacksDictionary;
 
 @interface SDWebImageDownloaderOperation ()
 
+
+/**
+ 将每个Download Operation的progress 与 competition都作为一个字典组合，放到这个数组中
+ */
 @property (strong, nonatomic, nonnull) NSMutableArray<SDCallbacksDictionary *> *callbackBlocks;
 
 @property (assign, nonatomic, readwrite) SDWebImageDownloaderOptions options;

@@ -38,8 +38,13 @@ static void * SDWebImageDownloaderContext = &SDWebImageDownloaderContext;
 
 @property (strong, nonatomic, nonnull) NSOperationQueue *downloadQueue;
 @property (weak, nonatomic, nullable) NSOperation *lastAddedOperation;
+
+/**
+ 下载Operation的字段
+ */
 @property (strong, nonatomic, nonnull) NSMutableDictionary<NSURL *, NSOperation<SDWebImageDownloaderOperation> *> *URLOperations;
 @property (strong, nonatomic, nullable) NSMutableDictionary<NSString *, NSString *> *HTTPHeaders;
+// 信号量在大部分情况下的性能都占优
 @property (strong, nonatomic, nonnull) dispatch_semaphore_t HTTPHeadersLock; // A lock to keep the access to `HTTPHeaders` thread-safe
 @property (strong, nonatomic, nonnull) dispatch_semaphore_t operationsLock; // A lock to keep the access to `URLOperations` thread-safe
 
@@ -189,7 +194,7 @@ static void * SDWebImageDownloaderContext = &SDWebImageDownloaderContext;
 }
 
 /**
- 
+ 图片最后下载的执行操作
  */
 - (nullable SDWebImageDownloadToken *)downloadImageWithURL:(nullable NSURL *)url
                                                    options:(SDWebImageDownloaderOptions)options
@@ -206,9 +211,11 @@ static void * SDWebImageDownloaderContext = &SDWebImageDownloaderContext;
     }
     
     SD_LOCK(self.operationsLock);
+    // 从URLOperations获取Operation
     NSOperation<SDWebImageDownloaderOperation> *operation = [self.URLOperations objectForKey:url];
     // There is a case that the operation may be marked as finished or cancelled, but not been removed from `self.URLOperations`.
     if (!operation || operation.isFinished || operation.isCancelled) {
+        // 如果Operation为空，则重新创建
         operation = [self createDownloaderOperationWithUrl:url options:options context:context];
         if (!operation) {
             SD_UNLOCK(self.operationsLock);
@@ -246,6 +253,9 @@ static void * SDWebImageDownloaderContext = &SDWebImageDownloaderContext;
     
     id downloadOperationCancelToken = [operation addHandlersForProgress:progressBlock completed:completedBlock];
     
+    // 为每个Operation创建一个标识
+    // 这个标识记录了pOperation的URL、request、progress、completion
+    // 该标识可用于取消 download Operation
     SDWebImageDownloadToken *token = [[SDWebImageDownloadToken alloc] initWithDownloadOperation:operation];
     token.url = url;
     token.request = operation.request;
@@ -302,7 +312,8 @@ static void * SDWebImageDownloaderContext = &SDWebImageDownloaderContext;
         operationClass = [SDWebImageDownloaderOperation class];
     }
     NSOperation<SDWebImageDownloaderOperation> *operation = [[operationClass alloc] initWithRequest:request inSession:self.session options:options context:context];
-    
+    //---以下配置为config
+    // 设置认证
     if ([operation respondsToSelector:@selector(setCredential:)]) {
         if (self.config.urlCredential) {
             operation.credential = self.config.urlCredential;
@@ -310,11 +321,13 @@ static void * SDWebImageDownloaderContext = &SDWebImageDownloaderContext;
             operation.credential = [NSURLCredential credentialWithUser:self.config.username password:self.config.password persistence:NSURLCredentialPersistenceForSession];
         }
     }
-        
+    
+    // 设置最小的进度间隔
     if ([operation respondsToSelector:@selector(setMinimumProgressInterval:)]) {
         operation.minimumProgressInterval = MIN(MAX(self.config.minimumProgressInterval, 0), 1);
     }
     
+    // 设置Operation的优先级
     if (options & SDWebImageDownloaderHighPriority) {
         operation.queuePriority = NSOperationQueuePriorityHigh;
     } else if (options & SDWebImageDownloaderLowPriority) {
@@ -323,6 +336,7 @@ static void * SDWebImageDownloaderContext = &SDWebImageDownloaderContext;
     
     if (self.config.executionOrder == SDWebImageDownloaderLIFOExecutionOrder) {
         // Emulate LIFO execution order by systematically adding new operations as last operation's dependency
+        // 是否有依赖
         [self.lastAddedOperation addDependency:operation];
         self.lastAddedOperation = operation;
     }
