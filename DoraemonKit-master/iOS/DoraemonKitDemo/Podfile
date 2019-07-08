@@ -1,0 +1,20 @@
+platform:ios,’8.0’
+#use_frameworks!
+#inhibit_all_warnings! #消除第三方仓库的警告
+source 'git@github.com:CocoaPods/Specs.git'
+
+post_install do |installer|
+    installer.pods_project.targets.each do |target|
+        target.build_configurations.each do |config|
+            config.build_settings['COMPILER_INDEX_STORE_ENABLE'] = "NO"
+        end
+    end
+end
+
+target :'DoraemonKitDemo' do
+  #pod 'DoraemonKit', :subspecs => ['Core','WithLogger','WithGPS','WithLoad','WithWeex'],  :path => '../../'
+    pod 'DoraemonKit', :subspecs => ['Core','WithLogger','WithGPS','WithLoad'],  :path => '../../'
+    pod 'AFNetworking','2.6.3'
+    #pod 'SDWebImage','3.7.6'
+    pod 'SDWebImage', '5.0.6'
+end
