@@ -235,9 +235,12 @@ static void * SDWebImageDownloaderContext = &SDWebImageDownloaderContext;
             [self.URLOperations removeObjectForKey:url];
             SD_UNLOCK(self.operationsLock);
         };
+        
+        // 将新创建的Operation假如到URLOperations，后面方便取出
         self.URLOperations[url] = operation;
         // Add operation to operation queue only after all configuration done according to Apple's doc.
         // `addOperation:` does not synchronously execute the `operation.completionBlock` so this will not cause deadlock.
+        // 假如到下载队列，就会开始异步下载
         [self.downloadQueue addOperation:operation];
     }
     else if (!operation.isExecuting) {
@@ -250,6 +253,7 @@ static void * SDWebImageDownloaderContext = &SDWebImageDownloaderContext;
         }
     }
     SD_UNLOCK(self.operationsLock);
+    
     
     id downloadOperationCancelToken = [operation addHandlersForProgress:progressBlock completed:completedBlock];
     

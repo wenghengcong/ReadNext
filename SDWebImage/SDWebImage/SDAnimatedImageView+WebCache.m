@@ -47,6 +47,21 @@
     [self sd_setImageWithURL:url placeholderImage:placeholder options:options context:nil progress:progressBlock completed:completedBlock];
 }
 
+
+/**
+ 分类sd_setImageWithURL收口
+ SDWebImageContext 是一条流水线，存储了很多有用的信息
+ 
+ SDWebImageContextSetImageOperationKey        NSString                                   SDWebImageDefine.m
+ SDWebImageContextCustomManager               SDWebImageManager                          SDWebImageDefine.m
+ SDWebImageContextImageTransformer            id<SDImageTransformer>                     SDWebImageDefine.m
+ SDWebImageContextImageScaleFactor            CGFloat                                    SDWebImageDefine.m
+ SDWebImageContextStoreCacheType              SDImageCacheType                           SDWebImageDefine.m
+ SDWebImageContextDownloadRequestModifier     id<SDWebImageDownloaderRequestModifier>    SDWebImageDefine.m
+ SDWebImageContextCacheKeyFilter              id<SDWebImageCacheKeyFilter>               SDWebImageDefine.m
+ SDWebImageContextCacheSerializer             id<SDWebImageCacheSerializer>              SDWebImageDefine.m
+ SDWebImageContextLoaderCachedImage           UIImage/NSImage<SDAnimatedImage>           SDImageLoader.m
+ */
 - (void)sd_setImageWithURL:(nullable NSURL *)url
           placeholderImage:(nullable UIImage *)placeholder
                    options:(SDWebImageOptions)options
@@ -60,6 +75,8 @@
     } else {
         mutableContext = [NSMutableDictionary dictionary];
     }
+    
+    // 动画视图的类存储到context
     mutableContext[SDWebImageContextAnimatedImageClass] = animatedImageClass;
     [self sd_internalSetImageWithURL:url
                     placeholderImage:placeholder

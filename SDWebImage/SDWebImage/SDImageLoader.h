@@ -79,6 +79,7 @@ FOUNDATION_EXPORT UIImage * _Nullable SDImageLoaderDecodeProgressiveImageData(NS
  @param completedBlock A block called when operation has been completed.
  @return An operation which allow the user to cancel the current request.
  */
+// 下载图片
 - (nullable id<SDWebImageOperation>)requestImageWithURL:(nullable NSURL *)url
                                                 options:(SDWebImageOptions)options
                                                 context:(nullable SDWebImageContext *)context

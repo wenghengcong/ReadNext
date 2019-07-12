@@ -11,10 +11,15 @@
 #import "UIView+WebCacheOperation.h"
 #import "SDWebImageError.h"
 
+
 const int64_t SDWebImageProgressUnitCountUnknown = 1LL;
 
 @implementation UIView (WebCache)
 
+
+/**
+ 利用关联对象来进行管理
+ */
 - (nullable NSURL *)sd_imageURL {
     return objc_getAssociatedObject(self, @selector(sd_imageURL));
 }
@@ -44,7 +49,7 @@ const int64_t SDWebImageProgressUnitCountUnknown = 1LL;
     objc_setAssociatedObject(self, @selector(sd_imageProgress), sd_imageProgress, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 }
 
-// 1. 先调用该方法
+// 所有UIView最后都会调用到这里--
 - (void)sd_internalSetImageWithURL:(nullable NSURL *)url
                   placeholderImage:(nullable UIImage *)placeholder
                            options:(SDWebImageOptions)options
@@ -58,6 +63,7 @@ const int64_t SDWebImageProgressUnitCountUnknown = 1LL;
      This is used for view instance which supports different image loading process.
      If nil, will use the class name as operation key. (NSString *)
      */
+    // 图片对应Opreation的key
     NSString *validOperationKey = context[SDWebImageContextSetImageOperationKey];
     if (!validOperationKey) {
         validOperationKey = NSStringFromClass([self class]);
@@ -66,7 +72,8 @@ const int64_t SDWebImageProgressUnitCountUnknown = 1LL;
     [self sd_cancelImageLoadOperationWithKey:validOperationKey];
     self.sd_imageURL = url;
     
-    // 如果设置在图片未下载时显示占位图
+    // 如果不是延迟显示placeholder的情况
+    // 先显示占位图
     if (!(options & SDWebImageDelayPlaceholder)) {
         dispatch_main_async_safe(^{
             [self sd_setImage:placeholder imageData:nil basedOnClassOrViaCustomSetImageBlock:setImageBlock cacheType:SDImageCacheTypeNone imageURL:url];
@@ -116,7 +123,8 @@ const int64_t SDWebImageProgressUnitCountUnknown = 1LL;
             }
         };
         
-        
+        // 传入：url 、options 、 context 、combinedProgressBlock
+        // 回调结果：image 、data 、error 、cacheType 、 finished 、 imageURL
         id <SDWebImageOperation> operation = [manager loadImageWithURL:url options:options context:context progress:combinedProgressBlock completed:^(UIImage *image, NSData *data, NSError *error, SDImageCacheType cacheType, BOOL finished, NSURL *imageURL) {
             @strongify(self);
             if (!self) { return; }
@@ -140,7 +148,7 @@ const int64_t SDWebImageProgressUnitCountUnknown = 1LL;
             BOOL shouldCallCompletedBlock = finished || (options & SDWebImageAvoidAutoSetImage);
             // 不应该设置图片，有以下两种情况
             // 1.有图片，但是设置了“完成时自定义设置Image Block”
-            // 2.没有图片，但是并没有设置了“等完成时才决定是否显示占位图”
+            // 2.没有图片，但是并没有设置“等完成时才决定是否显示占位图”
             BOOL shouldNotSetImage = ((image && (options & SDWebImageAvoidAutoSetImage)) ||
                                       (!image && !(options & SDWebImageDelayPlaceholder)));
             

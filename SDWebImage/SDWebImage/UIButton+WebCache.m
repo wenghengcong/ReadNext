@@ -18,6 +18,11 @@ static char imageURLStorageKey;
 
 typedef NSMutableDictionary<NSString *, NSURL *> SDStateImageURLDictionary;
 
+
+/**
+ 内联函数
+ 在编译时，直接将调用该函数的地方，插入完整的函数代码，适合短息精悍的函数
+ */
 static inline NSString * imageURLKeyForState(UIControlState state) {
     return [NSString stringWithFormat:@"image_%lu", (unsigned long)state];
 }

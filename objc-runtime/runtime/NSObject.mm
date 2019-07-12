@@ -1834,8 +1834,7 @@ callAlloc(Class cls, bool checkNil, bool allocWithZone=false)
 
 // Base class implementation of +alloc. cls is not nil.
 // Calls [cls allocWithZone:nil].
-id
-_objc_rootAlloc(Class cls)
+id _objc_rootAlloc(Class cls)
 {
     return callAlloc(cls, false/*checkNil*/, true/*allocWithZone*/);
 }
@@ -2358,6 +2357,10 @@ void arr_init(void)
     return ((id)self)->rootRetainCount();
 }
 
+
+/**
+ HORead: alloc入口函数
+ */
 + (id)alloc {
     return _objc_rootAlloc(self);
 }

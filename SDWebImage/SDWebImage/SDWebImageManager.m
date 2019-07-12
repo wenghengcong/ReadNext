@@ -18,7 +18,15 @@ static id<SDImageLoader> _defaultImageLoader;
 @interface SDWebImageCombinedOperation ()
 
 @property (assign, nonatomic, getter = isCancelled) BOOL cancelled;
+
+/**
+ 下载Operation
+ */
 @property (strong, nonatomic, readwrite, nullable) id<SDWebImageOperation> loaderOperation;
+
+/**
+ 缓存Operation
+ */
 @property (strong, nonatomic, readwrite, nullable) id<SDWebImageOperation> cacheOperation;
 /**
  Operation 对应的manager
@@ -53,6 +61,10 @@ static id<SDImageLoader> _defaultImageLoader;
     _defaultImageCache = defaultImageCache;
 }
 
+
+/**
+ 默认图片下载
+ */
 + (id<SDImageLoader>)defaultImageLoader {
     return _defaultImageLoader;
 }
@@ -117,6 +129,10 @@ static id<SDImageLoader> _defaultImageLoader;
     return [self loadImageWithURL:url options:options context:nil progress:progressBlock completed:completedBlock];
 }
 
+
+/**
+ 创建Operation
+ */
 - (SDWebImageCombinedOperation *)loadImageWithURL:(nullable NSURL *)url
                                           options:(SDWebImageOptions)options
                                           context:(nullable SDWebImageContext *)context
@@ -206,6 +222,7 @@ static id<SDImageLoader> _defaultImageLoader;
         id<SDWebImageCacheKeyFilter> cacheKeyFilter = context[SDWebImageContextCacheKeyFilter];
         // 获取缓存key
         NSString *key = [self cacheKeyForURL:url cacheKeyFilter:cacheKeyFilter];
+        
         @weakify(operation);
         // 设置operation.cacheOperation，在执行[self.imageCache queryImageForKey] 会去查找缓存中的图片
         // queryImageForKey的block，会在获取缓存后，执行callDownloadProcessForOperation
@@ -240,6 +257,7 @@ static id<SDImageLoader> _defaultImageLoader;
                               cacheType:(SDImageCacheType)cacheType
                                progress:(nullable SDImageLoaderProgressBlock)progressBlock
                               completed:(nullable SDInternalCompletionBlock)completedBlock {
+    
     // Check whether we should download image from network
     // 检查是否只允许从缓存中读取图片，而不进行重网络下载或从Photo框架中获取
     BOOL shouldDownload = (options & SDWebImageFromCacheOnly) == 0;
@@ -267,7 +285,10 @@ static id<SDImageLoader> _defaultImageLoader;
         
         // `SDWebImageCombinedOperation` -> `SDWebImageDownloadToken` -> `downloadOperationCancelToken`, which is a `SDCallbacksDictionary` and retain the completed block below, so we need weak-strong again to avoid retain cycle
         @weakify(operation);
+        
         // 建立下载图片的operation
+        // 传入：url、options、context、progressBlock
+        // 回调：downloadedImage、downloadedData、error、finished
         operation.loaderOperation = [self.imageLoader requestImageWithURL:url options:options context:context progress:progressBlock completed:^(UIImage *downloadedImage, NSData *downloadedData, NSError *error, BOOL finished) {
             @strongify(operation);
             if (!operation || operation.isCancelled) {
