@@ -13,6 +13,10 @@
 
 @end
 
+
+/**
+ fishhook:只能hook系统函数，而不能hook自己编写的函数
+ */
 @implementation ViewController
 
 - (void)viewDidLoad {

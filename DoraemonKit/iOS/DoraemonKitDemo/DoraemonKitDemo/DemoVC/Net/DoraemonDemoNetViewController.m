@@ -176,23 +176,38 @@
 }
 
 - (void)netForAFNetworking2{
-    AFHTTPRequestOperationManager *manager = [AFHTTPRequestOperationManager manager];
-    manager.requestSerializer = [AFHTTPRequestSerializer serializer];// 请求
-    manager.responseSerializer = [AFHTTPResponseSerializer serializer];// 响应
-    manager.responseSerializer.acceptableContentTypes = [NSSet setWithObjects:@"application/json",@"text/json",@"text/javascript",@"text/html", nil];
-    //    [manager POST:@"http://172.23.160.242:8080/YxReactServerDemo/message/getAllMessage" parameters:@{@"name":@"yixiang2"} success:^(AFHTTPRequestOperation *operation, id responseObject) {
-    //        NSString *string = [[NSString alloc] initWithData:responseObject encoding:NSUTF8StringEncoding];
-    //        NSLog(@"请求成功 %@",string);
-    //    } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
-    //        NSLog(@"请求失败");
-    //    }];
     
-    [manager POST:@"https://www.taobao.com/" parameters:nil success:^(AFHTTPRequestOperation *operation, id responseObject) {
+    AFHTTPSessionManager *manager = [AFHTTPSessionManager manager];
+    manager.requestSerializer = [AFHTTPRequestSerializer serializer];
+    manager.responseSerializer = [AFHTTPResponseSerializer serializer];
+    manager.responseSerializer.acceptableContentTypes = [NSSet setWithObjects:@"application/json",@"text/json",@"text/javascript",@"text/html", nil];
+    [manager GET:@"https://www.taobao.com/" parameters:nil progress:^(NSProgress * _Nonnull downloadProgress) {
+        
+    } success:^(NSURLSessionDataTask * _Nonnull task, id  _Nullable responseObject) {
         NSString *string = [[NSString alloc] initWithData:responseObject encoding:NSUTF8StringEncoding];
         NSLog(@"请求成功 %@",string);
-    } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
+    } failure:^(NSURLSessionDataTask * _Nullable task, NSError * _Nonnull error) {
         NSLog(@"请求失败");
+        
     }];
+    
+//    AFHTTPRequestOperationManager *manager = [AFHTTPRequestOperationManager manager];
+//    manager.requestSerializer = [AFHTTPRequestSerializer serializer];// 请求
+//    manager.responseSerializer = [AFHTTPResponseSerializer serializer];// 响应
+//    manager.responseSerializer.acceptableContentTypes = [NSSet setWithObjects:@"application/json",@"text/json",@"text/javascript",@"text/html", nil];
+//    //    [manager POST:@"http://172.23.160.242:8080/YxReactServerDemo/message/getAllMessage" parameters:@{@"name":@"yixiang2"} success:^(AFHTTPRequestOperation *operation, id responseObject) {
+//    //        NSString *string = [[NSString alloc] initWithData:responseObject encoding:NSUTF8StringEncoding];
+//    //        NSLog(@"请求成功 %@",string);
+//    //    } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
+//    //        NSLog(@"请求失败");
+//    //    }];
+//    
+//    [manager POST:@"https://www.taobao.com/" parameters:nil success:^(AFHTTPRequestOperation *operation, id responseObject) {
+//        NSString *string = [[NSString alloc] initWithData:responseObject encoding:NSUTF8StringEncoding];
+//        NSLog(@"请求成功 %@",string);
+//    } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
+//        NSLog(@"请求失败");
+//    }];
 }
 
 #pragma mark -- NSURLConnectionDataDelegate
