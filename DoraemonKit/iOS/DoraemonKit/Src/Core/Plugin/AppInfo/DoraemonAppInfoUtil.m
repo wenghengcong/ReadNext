@@ -122,8 +122,6 @@
             authority = @"Always";
         }else if(state == kCLAuthorizationStatusAuthorizedWhenInUse){
             authority = @"WhenInUse";
-        }else if(state == kCLAuthorizationStatusAuthorized){
-            authority = @"Authorized";
         }
     }else{
         authority = @"NoEnabled";
@@ -132,7 +130,7 @@
 }
 
 + (NSString *)pushAuthority{
-    if ([[UIApplication sharedApplication] currentUserNotificationSettings].types  == UIRemoteNotificationTypeNone) {
+    if ([[UIApplication sharedApplication] currentUserNotificationSettings].types  == UIUserNotificationTypeNone) {
         return @"NO";
     }
     return @"YES";

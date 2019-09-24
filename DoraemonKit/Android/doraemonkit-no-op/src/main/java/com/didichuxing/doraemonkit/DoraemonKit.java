@@ -37,4 +37,11 @@ public class DoraemonKit {
 
     public static void disableUpload() {
     }
+
+    public static void enableRequestPermissionSelf() {
+    }
+
+    public static void setDebug(boolean debug) {
+
+    }
 }

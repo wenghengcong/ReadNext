@@ -130,30 +130,16 @@
 //            NSLog(@"请求失败");
 //        }];
         
-        AFHTTPSessionManager *manager = [AFHTTPSessionManager manager];
-        manager.requestSerializer = [AFHTTPRequestSerializer serializer];
-        manager.responseSerializer = [AFHTTPResponseSerializer serializer];
+        AFHTTPRequestOperationManager *manager = [AFHTTPRequestOperationManager manager];
+        manager.requestSerializer = [AFHTTPRequestSerializer serializer];// 请求
+        manager.responseSerializer = [AFHTTPResponseSerializer serializer];// 响应
         manager.responseSerializer.acceptableContentTypes = [NSSet setWithObjects:@"application/json",@"text/json",@"text/javascript",@"text/html", nil];
-        [manager GET:@"https://www.taobao.com/" parameters:nil progress:^(NSProgress * _Nonnull downloadProgress) {
-            
-        } success:^(NSURLSessionDataTask * _Nonnull task, id  _Nullable responseObject) {
+        [manager GET:@"https://www.taobao.com/" parameters:nil success:^(AFHTTPRequestOperation *operation, id responseObject) {
             NSString *string = [[NSString alloc] initWithData:responseObject encoding:NSUTF8StringEncoding];
             NSLog(@"请求成功 %@",string);
-        } failure:^(NSURLSessionDataTask * _Nullable task, NSError * _Nonnull error) {
+        } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
             NSLog(@"请求失败");
-
         }];
-        
-//        AFHTTPRequestOperationManager *manager = [AFHTTPRequestOperationManager manager];
-//        manager.requestSerializer = [AFHTTPRequestSerializer serializer];// 请求
-//        manager.responseSerializer = [AFHTTPResponseSerializer serializer];// 响应
-//        manager.responseSerializer.acceptableContentTypes = [NSSet setWithObjects:@"application/json",@"text/json",@"text/javascript",@"text/html", nil];
-//        [manager GET:@"https://www.taobao.com/" parameters:nil success:^(AFHTTPRequestOperation *operation, id responseObject) {
-//            NSString *string = [[NSString alloc] initWithData:responseObject encoding:NSUTF8StringEncoding];
-//            NSLog(@"请求成功 %@",string);
-//        } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
-//            NSLog(@"请求失败");
-//        }];
     }
 
 }

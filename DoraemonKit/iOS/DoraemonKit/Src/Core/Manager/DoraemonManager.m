@@ -35,6 +35,11 @@
 #import "DoraemonWeexInfoDataManager.h"
 #endif
 
+#if DoraemonWithGPS
+#import "DoraemonGPSMocker.h"
+#endif
+
+
 #define kTitle        @"title"
 #define kDesc         @"desc"
 #define kIcon         @"icon"
@@ -60,6 +65,9 @@ typedef void (^DoraemonPerformanceBlock)(NSDictionary *);
 
 @property (nonatomic, assign) BOOL hasInstall;
 
+// 定制位置
+@property (nonatomic) CGPoint startingPosition;
+
 @end
 
 @implementation DoraemonManager
@@ -74,6 +82,17 @@ typedef void (^DoraemonPerformanceBlock)(NSDictionary *);
 }
 
 - (void)install{
+    //启用默认位置
+    CGPoint defaultPosition = DoraemonStartingPosition;
+    CGSize size = [UIScreen mainScreen].bounds.size;
+    if (size.width > size.height) {
+        defaultPosition = DoraemonFullScreenStartingPosition;
+    }
+    [self installWithStartingPosition:defaultPosition];
+}
+
+- (void)installWithStartingPosition:(CGPoint) position{
+    _startingPosition = position;
     [self installWithCustomBlock:^{
         //什么也没发生
     }];
@@ -97,7 +116,7 @@ typedef void (^DoraemonPerformanceBlock)(NSDictionary *);
     [self initData];
     customBlock();
 
-    [self initEntry];
+    [self initEntry:self.startingPosition];
     
     //根据开关判断是否收集Crash日志
     if ([[DoraemonCacheManager sharedInstance] crashSwitch]) {
@@ -110,7 +129,17 @@ typedef void (^DoraemonPerformanceBlock)(NSDictionary *);
     [[DoraemonCacheManager sharedInstance] saveCpuSwitch:NO];
     [[DoraemonCacheManager sharedInstance] saveMemorySwitch:NO];
     [[DoraemonCacheManager sharedInstance] saveNetFlowSwitch:NO];
-    [[DoraemonCacheManager sharedInstance] saveMockGPSSwitch:NO];
+    
+#if DoraemonWithGPS
+    //开启mockGPS功能
+    if ([[DoraemonCacheManager sharedInstance] mockGPSSwitch]) {
+        CLLocationCoordinate2D coordinate = [[DoraemonCacheManager sharedInstance] mockCoordinate];
+        if (coordinate.longitude>0 && coordinate.latitude>0) {
+            CLLocation *loc = [[CLLocation alloc] initWithLatitude:coordinate.latitude longitude:coordinate.longitude];
+            [[DoraemonGPSMocker shareInstance] mockPoint:loc];
+        }
+    }
+#endif
     
     //开启NSLog监控功能
     if ([[DoraemonCacheManager sharedInstance] nsLogSwitch]) {
@@ -135,10 +164,10 @@ typedef void (^DoraemonPerformanceBlock)(NSDictionary *);
             self.performanceBlock(upLoadData);
         }
         //默认实现 保存到沙盒中
-        NSString *testTime = [DoraemonUtil dateFormatTimeInterval:[upLoadData[@"testTime"] floatValue]];
+        NSString *testTimeString = upLoadData[@"testTime"];
         
         NSString *data = [DoraemonUtil dictToJsonStr:upLoadData];
-        [DoraemonUtil savePerformanceDataInFile:testTime data:data];
+        [DoraemonUtil savePerformanceDataInFile:testTimeString data:data];
     }];
     
     [[DoraemonANRManager sharedInstance] addANRBlock:^(NSDictionary *anrInfo) {
@@ -163,7 +192,7 @@ typedef void (^DoraemonPerformanceBlock)(NSDictionary *);
     [DoraemonWeexLogDataSource shareInstance];
     [DoraemonWeexInfoDataManager shareInstance];
 #endif
-
+    
 }
 
 
@@ -194,6 +223,10 @@ typedef void (^DoraemonPerformanceBlock)(NSDictionary *);
     [self addPluginWithPluginType:DoraemonManagerPluginType_DoraemonCocoaLumberjackPlugin];
 #endif
     
+#if DoraemonWithDatabase
+    [self addPluginWithPluginType:DoraemonManagerPluginType_DoraemonDatabasePlugin];
+#endif
+    
     #pragma mark - 性能检测
     [self addPluginWithPluginType:DoraemonManagerPluginType_DoraemonFPSPlugin];
     [self addPluginWithPluginType:DoraemonManagerPluginType_DoraemonCPUPlugin];
@@ -205,6 +238,7 @@ typedef void (^DoraemonPerformanceBlock)(NSDictionary *);
 #if DoraemonWithLoad
     [self addPluginWithPluginType:DoraemonManagerPluginType_DoraemonMethodUseTimePlugin];
 #endif
+    [self addPluginWithPluginType:DoraemonManagerPluginType_DoraemonStartTimePlugin];
     
     #pragma mark - 视觉工具
     [self addPluginWithPluginType:DoraemonManagerPluginType_DoraemonColorPickPlugin];
@@ -217,8 +251,11 @@ typedef void (^DoraemonPerformanceBlock)(NSDictionary *);
 /**
  初始化工具入口
  */
-- (void)initEntry{
-    _entryView = [[DoraemonEntryView alloc] init];
+- (void)initEntry:(CGPoint) startingPosition{
+    _entryView = [DoraemonEntryView alloc];
+    _entryView.startingPosition = startingPosition;
+    _entryView = [_entryView init];
+    
     [_entryView makeKeyAndVisible];
 }
 
@@ -465,7 +502,13 @@ typedef void (^DoraemonPerformanceBlock)(NSDictionary *);
                                    @{kPluginName:@"DoraemonCocoaLumberjackPlugin"},
                                    @{kAtModule:DoraemonLocalizedString(@"常用工具")}
                                    ],
-                           
+                           @(DoraemonManagerPluginType_DoraemonDatabasePlugin) : @[
+                                   @{kTitle:@"YYDatabase"},
+                                   @{kDesc:DoraemonLocalizedString(@"数据库")},
+                                   @{kIcon:@"doraemon_database"},
+                                   @{kPluginName:@"DoraemonDatabasePlugin"},
+                                   @{kAtModule:DoraemonLocalizedString(@"常用工具")}
+                                   ],
                            // 性能检测
                            @(DoraemonManagerPluginType_DoraemonFPSPlugin) : @[
                                    @{kTitle:DoraemonLocalizedString(@"帧率")},
@@ -524,6 +567,13 @@ typedef void (^DoraemonPerformanceBlock)(NSDictionary *);
                                    @{kPluginName:@"DoraemonLargeImagePlugin"},
                                    @{kAtModule:DoraemonLocalizedString(@"性能检测")}
                                    ],
+                           @(DoraemonManagerPluginType_DoraemonStartTimePlugin) : @[
+                                   @{kTitle:DoraemonLocalizedString(@"启动耗时")},
+                                   @{kDesc:DoraemonLocalizedString(@"启动耗时统计")},
+                                   @{kIcon:@"doraemon_app_start_time"},
+                                   @{kPluginName:@"DoraemonStartTimePlugin"},
+                                   @{kAtModule:DoraemonLocalizedString(@"性能检测")}
+                                   ],
                            // 视觉工具
                            @(DoraemonManagerPluginType_DoraemonColorPickPlugin) : @[
                                    @{kTitle:DoraemonLocalizedString(@"颜色吸管")},
@@ -563,6 +613,14 @@ typedef void (^DoraemonPerformanceBlock)(NSDictionary *);
     model.atModule = dataArray[4][kAtModule];
     
     return model;
+}
+
+- (void)setStartClass:(NSString *)startClass {
+    [[DoraemonCacheManager sharedInstance] saveStartClass:startClass];
+}
+
+- (NSString *)startClass{
+    return [[DoraemonCacheManager sharedInstance] startClass];
 }
 
 @end
