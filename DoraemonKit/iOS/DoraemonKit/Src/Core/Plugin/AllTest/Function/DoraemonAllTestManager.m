@@ -13,8 +13,10 @@
 #import "DoraemonNetFlowManager.h"
 #import "DoraemonNetFlowDataSource.h"
 #import "DoraemonFPSUtil.h"
-#import "DoraemonUtil.h"
 #import "DoraemonDefine.h"
+#import "DoraemonAllTestWindow.h"
+#import "DoraemonAllTestStatisticsManager.h"
+#import "UIViewController+Doraemon.h"
 
 @interface DoraemonAllTestManager()
 
@@ -29,6 +31,8 @@
 @property (nonatomic, copy) DoraemonAllTestManagerBlock block;
 
 @property (nonatomic, strong) NSDateFormatter *dateFormatter;
+
+@property (nonatomic, strong) NSMutableDictionary *windowDic;
 @end
 
 @implementation DoraemonAllTestManager
@@ -115,7 +119,10 @@
                                  @"flow_data":flowData
                                  };
     
-    // 7、数据处理
+    // 7、发送给DoraemonStatisticsManager
+    [DoraemonAllTestStatisticsManager shareInstance].resultDic = upLoadData;
+    
+    // 8、回调给外部block
     if (self.block) {
         self.block(upLoadData);
     }
@@ -172,7 +179,7 @@
     //CGFloat current = -1;
     
     //6、获取顶层VC
-    UIViewController *vc = [DoraemonUtil topViewControllerForKeyWindow];
+    UIViewController *vc = [UIViewController topViewControllerForKeyWindow];
     NSString *vcName = NSStringFromClass([vc class]);
     
     //7、组装commonData数据
@@ -188,6 +195,14 @@
         _commonDataArray = [NSMutableArray array];
     }
     [_commonDataArray addObject:commonItemData];
+    
+    
+    if(self.realTimeSwitchOn){
+        [DoraemonAllTestWindow shareInstance].hidden = NO;
+        [self allTestWindowShow:memoryValue CPU:cpuValue fps:fpsValue];
+    }else{
+        [DoraemonAllTestWindow shareInstance].hidden = YES;
+    }
 }
 
 
@@ -195,7 +210,26 @@
     self.block = block;
 }
 
-
-
+- (void)allTestWindowShow:(NSInteger)memoryValue CPU:(CGFloat)cpuValue fps:(NSInteger)fpsValue{
+    
+    _windowDic = [NSMutableDictionary dictionary];
+    if(_memorySwitchOn){
+      _windowDic[@"memory"] = [NSString stringWithFormat:@"%@ : %ldM",DoraemonLocalizedString(@"内存"),memoryValue];
+    }
+    if(_cpuSwitchOn){
+        _windowDic[@"CPU"] = [NSString stringWithFormat:@"%@ : %.1f%@",@"CPU",cpuValue,@"%"];
+    }
+    if(_fpsSwitchOn){
+        _windowDic[@"fps"] = [NSString stringWithFormat:@"%@ : %ld",@"FPS",fpsValue];
+    }
+    if(_flowSwitchOn){
+        if(![DoraemonAllTestWindow shareInstance].flowChanged)
+            [[DoraemonAllTestWindow shareInstance] updateFlowValue:@"0" downFlow:@"0"];
+    }else{
+        [[DoraemonAllTestWindow shareInstance] hideFlowValue];
+    }
+    
+    [[DoraemonAllTestWindow shareInstance] updateCommonValue:_windowDic[@"memory"] cpu:_windowDic[@"CPU"] fps:_windowDic[@"fps"]];
+}
 
 @end

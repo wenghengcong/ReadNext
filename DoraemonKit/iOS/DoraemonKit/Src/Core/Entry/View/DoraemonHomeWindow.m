@@ -10,6 +10,12 @@
 #import "UIColor+Doraemon.h"
 #import "DoraemonHomeEntry.h"
 
+@interface DoraemonHomeWindow()
+
+- (void)openPlugin:(UIViewController *)vc;
+
+@end
+
 @implementation DoraemonHomeWindow
 
 + (DoraemonHomeWindow *)shareInstance{
@@ -24,7 +30,7 @@
 - (instancetype)initWithFrame:(CGRect)frame{
     self = [super initWithFrame:frame];
     if (self) {
-        self.windowLevel = UIWindowLevelStatusBar + 1.f;
+        self.windowLevel = UIWindowLevelStatusBar - 1.f;
         self.backgroundColor = [UIColor clearColor];
         self.hidden = YES;
     }
@@ -65,6 +71,10 @@
         _nav = nil;
     }
 
+}
+
++ (void)openPlugin:(UIViewController *)vc{
+    [[self shareInstance] openPlugin:vc];
 }
 
 @end

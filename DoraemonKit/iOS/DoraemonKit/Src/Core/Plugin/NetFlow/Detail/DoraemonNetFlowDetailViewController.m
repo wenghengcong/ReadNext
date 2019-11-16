@@ -34,7 +34,21 @@ typedef NS_ENUM(NSUInteger, NetFlowSelectState) {
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    self.view.backgroundColor = [UIColor doraemon_colorWithHex:0xeff0f4];
+#if defined(__IPHONE_13_0) && (__IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_13_0)
+    if (@available(iOS 13.0, *)) {
+        self.view.backgroundColor = [UIColor colorWithDynamicProvider:^UIColor * _Nonnull(UITraitCollection * _Nonnull traitCollection) {
+            if (traitCollection.userInterfaceStyle == UIUserInterfaceStyleDark) {
+                return [UIColor systemBackgroundColor];
+            } else {
+                return [UIColor doraemon_colorWithHex:0xeff0f4];
+            }
+        }];
+    } else {
+#endif
+        self.view.backgroundColor = [UIColor doraemon_colorWithHex:0xeff0f4];
+#if defined(__IPHONE_13_0) && (__IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_13_0)
+    }
+#endif
     
     [self initData];
     
@@ -207,6 +221,17 @@ typedef NS_ENUM(NSUInteger, NetFlowSelectState) {
     [view addSubview:tipLabel];
     //tipLabel.backgroundColor = [UIColor doraemon_colorWithHex:0xeff0f4];
     
+#if defined(__IPHONE_13_0) && (__IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_13_0)
+    if (@available(iOS 13.0, *)) {
+        view.backgroundColor =  [UIColor colorWithDynamicProvider:^UIColor * _Nonnull(UITraitCollection * _Nonnull traitCollection) {
+            if (traitCollection.userInterfaceStyle == UIUserInterfaceStyleDark) {
+                return [UIColor systemBackgroundColor];
+            } else {
+                return [UIColor whiteColor];
+            }
+        }];
+    }
+#endif
     return view;
 }
 

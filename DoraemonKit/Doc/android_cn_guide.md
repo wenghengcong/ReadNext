@@ -5,11 +5,24 @@
 ```
 dependencies {
 	...
-    debugImplementation 'com.didichuxing.doraemonkit:doraemonkit:1.2.1'
-    releaseImplementation 'com.didichuxing.doraemonkit:doraemonkit-no-op:1.2.0'
+    debugImplementation 'com.didichuxing.doraemonkit:doraemonkit:2.0.0'
+    releaseImplementation 'com.didichuxing.doraemonkit:doraemonkit-no-op:2.0.0'
+    implementation 'com.squareup.okhttp3:okhttp:3.12.1'
     ...
 }
 ```
+注意:
+1)因为doraemonkit依赖okhttp的方式为compileOnly,所以如果你的本地没有引入okhttp,请手动添加依赖
+2)假如你无法通过jcenter下载到依赖库并报了以下的错误
+```
+ERROR: Failed to resolve: com.didichuxing.doraemonkit:doraemonkit:2.0.0 
+```
+建议你可以尝试挂载VPN或添加阿里云的镜像库重试
+```
+    //阿里云镜像库
+    maven { url "http://maven.aliyun.com/nexus/content/groups/public/" }
+```
+
 
 最新版本参见[这里](android-ReleaseNotes.md)。
 
@@ -25,11 +38,22 @@ DoraemonKit目前已支持Weex工具，包括
 ```
 dependencies {
 	...
-    debugImplementation 'com.didichuxing.doraemonkit:doraemonkit-weex:1.0.1'
-    releaseImplementation 'com.didichuxing.doraemonkit:doraemonkit-weex-no-op:1.0.1'
+    debugImplementation 'com.didichuxing.doraemonkit:doraemonkit-weex:2.0.0'
+    releaseImplementation 'com.didichuxing.doraemonkit:doraemonkit-weex-no-op:2.0.0'
     ...
 }
 ```
+
+如果有需要集成leakcanary的需求可以直接添加下面依赖
+
+```
+dependencies {
+	...
+    debugImplementation 'com.didichuxing.doraemonkit:doraemonkit-leakcanary:2.0.0'
+    ...
+}
+```
+leakcanary已经在doraemonkit中动态集成,不需要自己再进行手动集成,只需要添加上面的依赖即可.
 
 
 #### 2. 初始化
@@ -52,24 +76,6 @@ public void onCreate() {
 } 
 ```
 
-如果已接入了Weex工具（暂不支持自定义功能组件），使用下面方式初始化
-
-```
-@Override
-public void onCreate() {
-	...
-    DKWeexInstance.install(application)
-     
-    // H5任意门功能需要，非必须
-    DoraemonKit.setWebDoorCallback(new WebDoorManager.WebDoorCallback() {
-    @Override
-    public void overrideUrlLoading(Context context, String s) {
-        // 使用自己的H5容器打开这个链接
-    }
-    ...
-} 
-```
-
 
 #### 3. 流量监控功能（可选）
 
@@ -81,7 +87,7 @@ public void onCreate() {
 buildscript {
     dependencies {
         ...
-        classpath 'com.hujiang.aspectjx:gradle-android-plugin-aspectjx:2.0.4'
+        classpath 'com.github.franticn:gradle_plugin_android_aspectjx:2.0.6'
         ...
         // NOTE: Do not place your application dependencies here; they belong
         // in the individual module build.gradle files
@@ -97,7 +103,7 @@ buildscript {
 apply plugin: 'android-aspectjx'
 dependencies {
 	...
-    debugImplementation 'com.didichuxing.doraemonkit:doraemonkit-aop:1.0.0'
+    debugImplementation 'com.didichuxing.doraemonkit:doraemonkit-aop:2.0.0'
     ...
 }
 ```
