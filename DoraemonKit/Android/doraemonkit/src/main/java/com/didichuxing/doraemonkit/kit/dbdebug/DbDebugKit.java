@@ -1,15 +1,11 @@
 package com.didichuxing.doraemonkit.kit.dbdebug;
 
 import android.content.Context;
-import android.content.Intent;
 
 import com.didichuxing.doraemonkit.R;
-import com.didichuxing.doraemonkit.constant.BundleKey;
 import com.didichuxing.doraemonkit.constant.FragmentIndex;
+import com.didichuxing.doraemonkit.kit.AbstractKit;
 import com.didichuxing.doraemonkit.kit.Category;
-import com.didichuxing.doraemonkit.kit.IKit;
-import com.didichuxing.doraemonkit.ui.TranslucentActivity;
-import com.didichuxing.doraemonkit.ui.UniversalActivity;
 
 /**
  * ================================================
@@ -20,7 +16,7 @@ import com.didichuxing.doraemonkit.ui.UniversalActivity;
  * 修订历史：
  * ================================================
  */
-public class DbDebugKit implements IKit {
+public class DbDebugKit extends AbstractKit {
     @Override
     public int getCategory() {
         return Category.TOOLS;
@@ -38,10 +34,7 @@ public class DbDebugKit implements IKit {
 
     @Override
     public void onClick(Context context) {
-        Intent intent = new Intent(context, UniversalActivity.class);
-        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        intent.putExtra(BundleKey.FRAGMENT_INDEX, FragmentIndex.FRAGMENT_DB_DEBUG);
-        context.startActivity(intent);
+        startUniversalActivity(context, FragmentIndex.FRAGMENT_DB_DEBUG);
 
     }
 

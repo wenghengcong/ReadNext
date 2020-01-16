@@ -4,12 +4,15 @@ import android.app.Activity;
 import android.content.Context;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -28,7 +31,8 @@ import java.util.List;
 /**
  * Created by jintai on 2019/09/26.
  */
-public class ViewCheckInfoDokitView extends AbsDokitView implements ViewCheckDokitView.OnViewSelectListener {
+public class ViewCheckInfoDokitView extends AbsDokitView implements
+        ViewCheckDokitView.OnViewSelectListener, View.OnClickListener {
     private TextView mName;
     private TextView mId;
     private TextView mPosition;
@@ -36,6 +40,8 @@ public class ViewCheckInfoDokitView extends AbsDokitView implements ViewCheckDok
     private TextView mActivityInfo;
     private TextView mFragmentInfo;
 
+    private ImageView mPre;
+    private ImageView mNext;
     private ImageView mClose;
 
 
@@ -47,9 +53,9 @@ public class ViewCheckInfoDokitView extends AbsDokitView implements ViewCheckDok
     @Override
     public void onDestroy() {
         super.onDestroy();
-        ViewCheckDokitView popView = (ViewCheckDokitView) DokitViewManager.getInstance().getDokitView(getActivity(), ViewCheckDokitView.class.getSimpleName());
-        if (popView != null) {
-            popView.removeViewSelectListener(this);
+        ViewCheckDokitView dokitView = (ViewCheckDokitView) DokitViewManager.getInstance().getDokitView(getActivity(), ViewCheckDokitView.class.getSimpleName());
+        if (dokitView != null) {
+            dokitView.removeViewSelectListener(this);
         }
     }
 
@@ -67,27 +73,21 @@ public class ViewCheckInfoDokitView extends AbsDokitView implements ViewCheckDok
         mActivityInfo = findViewById(R.id.activity);
         mFragmentInfo = findViewById(R.id.fragment);
         mClose = findViewById(R.id.close);
-        mClose.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                ViewCheckConfig.setViewCheckOpen(getContext(), false);
-                DokitViewManager.getInstance().detach(ViewCheckDrawDokitView.class.getSimpleName());
-                DokitViewManager.getInstance().detach(ViewCheckInfoDokitView.class.getSimpleName());
-                DokitViewManager.getInstance().detach(ViewCheckDokitView.class.getSimpleName());
-            }
-        });
+        mClose.setOnClickListener(this);
+        mPre = findViewById(R.id.pre);
+        mPre.setOnClickListener(this);
+        mNext = findViewById(R.id.next);
+        mNext.setOnClickListener(this);
         postDelayed(new Runnable() {
             @Override
             public void run() {
-                ViewCheckDokitView popView = (ViewCheckDokitView) DokitViewManager.getInstance().getDokitView(getActivity(), ViewCheckDokitView.class.getSimpleName());
-                if(popView != null){
-                    popView.setViewSelectListener(ViewCheckInfoDokitView.this);
+                ViewCheckDokitView dokitView = (ViewCheckDokitView) DokitViewManager.getInstance().getDokitView(getActivity(), ViewCheckDokitView.class.getSimpleName());
+                if (dokitView != null) {
+                    dokitView.setViewSelectListener(ViewCheckInfoDokitView.this);
                 }
             }
-        },200);
-
+        }, 200);
     }
-
 
     @Override
     public void initDokitViewLayoutParams(DokitViewLayoutParams params) {
@@ -99,26 +99,60 @@ public class ViewCheckInfoDokitView extends AbsDokitView implements ViewCheckDok
     }
 
     @Override
-    public void onViewSelected(View view) {
-        if (view == null) {
+    public void updateViewLayout(String tag, boolean isActivityResume) {
+        super.updateViewLayout(tag, isActivityResume);
+        // 由于父类在此方法限制了高度无法自适应，所以重新设成wrap_content以自适应
+        final FrameLayout.LayoutParams params = getNormalLayoutParams();
+        params.height = ViewGroup.LayoutParams.WRAP_CONTENT;
+        getRootView().setLayoutParams(params);
+    }
+
+    @Override
+    public void onClick(View v) {
+        if (v == mClose) {
+            ViewCheckConfig.setViewCheckOpen(getContext(), false);
+            DokitViewManager.getInstance().detach(ViewCheckDrawDokitView.class.getSimpleName());
+            DokitViewManager.getInstance().detach(ViewCheckInfoDokitView.class.getSimpleName());
+            DokitViewManager.getInstance().detach(ViewCheckDokitView.class.getSimpleName());
+        }
+        if (v == mNext) {
+            ViewCheckDokitView dokitView = (ViewCheckDokitView) DokitViewManager.getInstance().getDokitView(getActivity(), ViewCheckDokitView.class.getSimpleName());
+            if (dokitView != null) {
+                dokitView.preformNextCheckView();
+            }
+        }
+        if (v == mPre) {
+            ViewCheckDokitView dokitView = (ViewCheckDokitView) DokitViewManager.getInstance().getDokitView(getActivity(), ViewCheckDokitView.class.getSimpleName());
+            if (dokitView != null) {
+                dokitView.preformPreCheckView();
+            }
+        }
+    }
+
+    @Override
+    public void onViewSelected(@Nullable View current, @NonNull List<View> checkViewList) {
+
+        mNext.setVisibility(checkViewList.size() > 1 ? View.VISIBLE : View.GONE);
+        mPre.setVisibility(checkViewList.size() > 1 ? View.VISIBLE : View.GONE);
+
+        if (current == null) {
             mName.setText("");
             mId.setText("");
             mPosition.setText("");
             mDesc.setText("");
         } else {
-            mName.setText(getResources().getString(R.string.dk_view_check_info_class, view.getClass().getSimpleName()));
-            String idText = getResources().getString(R.string.dk_view_check_info_id, UIUtils.getIdText(view));
+            mName.setText(getResources().getString(R.string.dk_view_check_info_class, current.getClass().getSimpleName()));
+            String idText = getResources().getString(R.string.dk_view_check_info_id, UIUtils.getIdText(current));
             mId.setText(idText);
-            String positionText = getResources().getString(R.string.dk_view_check_info_size, view.getWidth(), view.getHeight());
+            String positionText = getResources().getString(R.string.dk_view_check_info_size, current.getWidth(), current.getHeight());
             mPosition.setText(positionText);
-            Drawable drawable = view.getBackground();
-            String backgroundColor = "";
-            if (drawable instanceof ColorDrawable) {
-                int colorInt = ((ColorDrawable) drawable).getColor();
-                backgroundColor = ColorUtil.parseColorInt(colorInt);
+            String descText = getViewExtraInfo(current);
+            if (TextUtils.isEmpty(descText)) {
+                mDesc.setVisibility(View.GONE);
+            } else {
+                mDesc.setText(descText);
+                mDesc.setVisibility(View.VISIBLE);
             }
-            String descText = getResources().getString(R.string.dk_view_check_info_desc, backgroundColor);
-            mDesc.setText(descText);
             Activity activity = ActivityUtils.getTopActivity();
             if (activity != null) {
                 String activityText = activity.getClass().getSimpleName();
@@ -134,6 +168,49 @@ public class ViewCheckInfoDokitView extends AbsDokitView implements ViewCheckDok
                 setTextAndVisible(mFragmentInfo, "");
             }
         }
+    }
+
+    private String getViewExtraInfo(View v) {
+        StringBuilder info = new StringBuilder();
+        // 背景色
+        Drawable drawable = v.getBackground();
+        if (drawable != null) {
+            if (drawable instanceof ColorDrawable) {
+                int colorInt = ((ColorDrawable) drawable).getColor();
+                String backgroundColor = ColorUtil.parseColorInt(colorInt);
+                info.append(getResources().getString(R.string.dk_view_check_info_desc, backgroundColor));
+                info.append("\n");
+            }
+        }
+        // padding
+        if (v.getPaddingLeft() != 0 && v.getPaddingTop() != 0 && v.getPaddingRight() != 0 && v.getPaddingBottom() != 0) {
+            info.append(getResources().getString(R.string.dk_view_check_info_padding, v.getPaddingLeft(), v.getPaddingTop(), v.getPaddingRight(), v.getPaddingBottom()));
+            info.append("\n");
+        }
+        // margin
+        final ViewGroup.LayoutParams layoutParams = v.getLayoutParams();
+        if (layoutParams instanceof ViewGroup.MarginLayoutParams) {
+            final ViewGroup.MarginLayoutParams mp = ((ViewGroup.MarginLayoutParams) layoutParams);
+            if (mp.leftMargin != 0 && mp.topMargin != 0 && mp.rightMargin != 0 && mp.bottomMargin != 0) {
+                info.append(getResources().getString(R.string.dk_view_check_info_margin, mp.leftMargin, mp.topMargin, mp.rightMargin, mp.bottomMargin));
+                info.append("\n");
+            }
+        }
+        // TextView信息
+        if (v instanceof TextView) {
+            TextView tv = ((TextView) v);
+            String textColor = ColorUtil.parseColorInt(tv.getCurrentTextColor());
+            info.append(getResources().getString(R.string.dk_view_check_info_text_color, textColor));
+            info.append("\n");
+            info.append(getResources().getString(R.string.dk_view_check_info_text_size, (int) tv.getTextSize()));
+            info.append("\n");
+
+        }
+        // 删除最后一个换行
+        if (!TextUtils.isEmpty(info)) {
+            info.deleteCharAt(info.length() - 1);
+        }
+        return info.toString();
     }
 
     private void setTextAndVisible(TextView textView, String text) {

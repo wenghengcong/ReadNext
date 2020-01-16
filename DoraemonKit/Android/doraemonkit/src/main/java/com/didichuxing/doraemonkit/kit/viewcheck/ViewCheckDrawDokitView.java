@@ -1,7 +1,8 @@
 package com.didichuxing.doraemonkit.kit.viewcheck;
 
-import android.app.ActionBar;
 import android.content.Context;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.FrameLayout;
@@ -14,10 +15,11 @@ import com.didichuxing.doraemonkit.ui.base.DokitViewLayoutParams;
 import com.didichuxing.doraemonkit.ui.base.DokitViewManager;
 import com.didichuxing.doraemonkit.ui.viewcheck.LayoutBorderView;
 
+import java.util.List;
+
 /**
  * Created by jintai on 2019/09/26.
  */
-
 public class ViewCheckDrawDokitView extends AbsDokitView implements ViewCheckDokitView.OnViewSelectListener {
     private LayoutBorderView mLayoutBorderView;
 
@@ -56,22 +58,21 @@ public class ViewCheckDrawDokitView extends AbsDokitView implements ViewCheckDok
         postDelayed(new Runnable() {
             @Override
             public void run() {
-                ViewCheckDokitView popView = (ViewCheckDokitView) DokitViewManager.getInstance().getDokitView(ActivityUtils.getTopActivity(), ViewCheckDokitView.class.getSimpleName());
-                if (popView != null) {
-                    popView.setViewSelectListener(ViewCheckDrawDokitView.this);
+                ViewCheckDokitView dokitView = (ViewCheckDokitView) DokitViewManager.getInstance().getDokitView(ActivityUtils.getTopActivity(), ViewCheckDokitView.class.getSimpleName());
+                if (dokitView != null) {
+                    dokitView.setViewSelectListener(ViewCheckDrawDokitView.this);
                 }
             }
         }, 200);
 
     }
 
-
     @Override
-    public void onViewSelected(View view) {
-        if (view == null) {
+    public void onViewSelected(@Nullable View current, @NonNull List<View> checkViewList) {
+        if (current == null) {
             mLayoutBorderView.showViewLayoutBorder((ViewInfo) null);
         } else {
-            mLayoutBorderView.showViewLayoutBorder(new ViewInfo(view));
+            mLayoutBorderView.showViewLayoutBorder(new ViewInfo(current));
         }
     }
 
