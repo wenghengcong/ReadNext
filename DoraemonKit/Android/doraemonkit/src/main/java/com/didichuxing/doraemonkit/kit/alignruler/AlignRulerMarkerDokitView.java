@@ -3,13 +3,11 @@ package com.didichuxing.doraemonkit.kit.alignruler;
 import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.view.WindowManager;
 import android.widget.FrameLayout;
 
-import com.didichuxing.doraemonkit.DoraemonKit;
 import com.didichuxing.doraemonkit.R;
-import com.didichuxing.doraemonkit.ui.base.AbsDokitView;
-import com.didichuxing.doraemonkit.ui.base.DokitViewLayoutParams;
+import com.didichuxing.doraemonkit.kit.core.AbsDokitView;
+import com.didichuxing.doraemonkit.kit.core.DokitViewLayoutParams;
 import com.didichuxing.doraemonkit.util.UIUtils;
 
 import java.util.ArrayList;
@@ -38,8 +36,8 @@ public class AlignRulerMarkerDokitView extends AbsDokitView {
     public void initDokitViewLayoutParams(DokitViewLayoutParams params) {
         params.height = DokitViewLayoutParams.WRAP_CONTENT;
         params.width = DokitViewLayoutParams.WRAP_CONTENT;
-        params.x = UIUtils.getWidthPixels(getContext()) / 2;
-        params.y = UIUtils.getHeightPixels(getContext()) / 2;
+        params.x = UIUtils.getWidthPixels() / 2;
+        params.y = UIUtils.getHeightPixels() / 2;
     }
 
     @Override

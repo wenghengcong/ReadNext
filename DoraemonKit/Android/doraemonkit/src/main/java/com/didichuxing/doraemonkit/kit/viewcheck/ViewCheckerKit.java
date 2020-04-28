@@ -6,8 +6,8 @@ import com.didichuxing.doraemonkit.R;
 import com.didichuxing.doraemonkit.config.ViewCheckConfig;
 import com.didichuxing.doraemonkit.kit.AbstractKit;
 import com.didichuxing.doraemonkit.kit.Category;
-import com.didichuxing.doraemonkit.ui.base.DokitIntent;
-import com.didichuxing.doraemonkit.ui.base.DokitViewManager;
+import com.didichuxing.doraemonkit.kit.core.DokitIntent;
+import com.didichuxing.doraemonkit.kit.core.DokitViewManager;
 
 /**
  * Created by wanglikun on 2018/11/20.
@@ -46,11 +46,21 @@ public class ViewCheckerKit extends AbstractKit {
         DokitViewManager.getInstance().attach(intent);
 
 
-        ViewCheckConfig.setViewCheckOpen(context, true);
+        ViewCheckConfig.setViewCheckOpen(true);
     }
 
     @Override
     public void onAppInit(Context context) {
-        ViewCheckConfig.setViewCheckOpen(context, false);
+        ViewCheckConfig.setViewCheckOpen(false);
+    }
+
+    @Override
+    public boolean isInnerKit() {
+        return true;
+    }
+
+    @Override
+    public String innerKitId() {
+        return "dokit_sdk_ui_ck_widget";
     }
 }

@@ -1,8 +1,6 @@
-package com.didichuxing.doraemonkit.kit.logInfo;
+package com.didichuxing.doraemonkit.kit.loginfo;
 
 import android.content.Context;
-import android.support.v7.widget.LinearLayoutManager;
-import android.support.v7.widget.RecyclerView;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
@@ -17,14 +15,30 @@ import android.widget.RadioGroup;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
-import com.didichuxing.doraemonkit.R;
-import com.didichuxing.doraemonkit.ui.UniversalActivity;
-import com.didichuxing.doraemonkit.ui.base.AbsDokitView;
-import com.didichuxing.doraemonkit.ui.base.DokitViewLayoutParams;
-import com.didichuxing.doraemonkit.ui.loginfo.LogItemAdapter;
-import com.didichuxing.doraemonkit.ui.widget.titlebar.TitleBar;
-import com.didichuxing.doraemonkit.util.LogHelper;
+import androidx.fragment.app.FragmentActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
+import com.blankj.utilcode.util.AppUtils;
+import com.blankj.utilcode.util.FileIOUtils;
+import com.blankj.utilcode.util.FileUtils;
+import com.blankj.utilcode.util.PathUtils;
+import com.blankj.utilcode.util.ThreadUtils;
+import com.blankj.utilcode.util.TimeUtils;
+import com.blankj.utilcode.util.ToastUtils;
+import com.didichuxing.doraemonkit.DoraemonKit;
+import com.didichuxing.doraemonkit.R;
+import com.didichuxing.doraemonkit.kit.core.UniversalActivity;
+import com.didichuxing.doraemonkit.kit.core.AbsDokitView;
+import com.didichuxing.doraemonkit.kit.core.DokitViewLayoutParams;
+import com.didichuxing.doraemonkit.widget.dialog.DialogProvider;
+import com.didichuxing.doraemonkit.widget.dialog.UniversalDialogFragment;
+import com.didichuxing.doraemonkit.widget.titlebar.TitleBar;
+import com.didichuxing.doraemonkit.util.FileUtil;
+
+import java.io.File;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -35,17 +49,15 @@ public class LogInfoDokitView extends AbsDokitView implements LogInfoManager.OnL
 
     private static final int MAX_LOG_LINE_NUM = 10000;
 
-    private RecyclerView mLogList;
+    private RecyclerView mLogRv;
     private LogItemAdapter mLogItemAdapter;
     private EditText mLogFilter;
     private RadioGroup mRadioGroup;
-    private FrameLayout mTitleBar;
-
+    /**
+     * 单行的log
+     */
     private TextView mLogHint;
-    private RelativeLayout mLogPage;
-
-    private Button mTop;
-    private Button mBottom;
+    private RelativeLayout mLogRvWrap;
 
 
     private boolean mIsLoaded;
@@ -53,15 +65,8 @@ public class LogInfoDokitView extends AbsDokitView implements LogInfoManager.OnL
     @Override
     public void onCreate(Context context) {
         LogInfoManager.getInstance().registerListener(this);
-        LogInfoManager.getInstance().start();
     }
 
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-        LogInfoManager.getInstance().stop();
-        LogInfoManager.getInstance().removeListener();
-    }
 
     @Override
     public View onCreateView(Context context, FrameLayout view) {
@@ -75,11 +80,11 @@ public class LogInfoDokitView extends AbsDokitView implements LogInfoManager.OnL
 
     public void initView() {
         mLogHint = findViewById(R.id.log_hint);
-        mLogPage = findViewById(R.id.log_page);
-        mLogList = findViewById(R.id.log_list);
-        mLogList.setLayoutManager(new LinearLayoutManager(getContext()));
+        mLogRvWrap = findViewById(R.id.log_page);
+        mLogRv = findViewById(R.id.log_list);
+        mLogRv.setLayoutManager(new LinearLayoutManager(getContext()));
         mLogItemAdapter = new LogItemAdapter(getContext());
-        mLogList.setAdapter(mLogItemAdapter);
+        mLogRv.setAdapter(mLogItemAdapter);
         mLogFilter = findViewById(R.id.log_filter);
         mLogFilter.addTextChangedListener(new TextWatcher() {
             @Override
@@ -97,7 +102,7 @@ public class LogInfoDokitView extends AbsDokitView implements LogInfoManager.OnL
                 mLogItemAdapter.getFilter().filter(s);
             }
         });
-        mTitleBar = findViewById(R.id.dokit_title_bar);
+        FrameLayout mTitleBar = findViewById(R.id.dokit_title_bar);
         if (mTitleBar instanceof TitleBar) {
             ((TitleBar) mTitleBar).setOnTitleBarClickListener(new TitleBar.OnTitleBarClickListener() {
                 @Override
@@ -136,7 +141,7 @@ public class LogInfoDokitView extends AbsDokitView implements LogInfoManager.OnL
                 mLogItemAdapter.getFilter().filter(mLogFilter.getText());
             }
         });
-        mLogList.addOnScrollListener(new RecyclerView.OnScrollListener() {
+        mLogRv.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
             public void onScrollStateChanged(RecyclerView recyclerView, int newState) {
                 super.onScrollStateChanged(recyclerView, newState);
@@ -149,31 +154,140 @@ public class LogInfoDokitView extends AbsDokitView implements LogInfoManager.OnL
 
                 final LinearLayoutManager layoutManager = (LinearLayoutManager) recyclerView.getLayoutManager();
                 // if the bottom of the list isn't visible anymore, then stop autoscrolling
-                mAutoscrollToBottom = (layoutManager.findLastCompletelyVisibleItemPosition() == recyclerView.getAdapter().getItemCount() - 1);
+                mAutoScrollToBottom = (layoutManager.findLastCompletelyVisibleItemPosition() == recyclerView.getAdapter().getItemCount() - 1);
             }
         });
 
         mRadioGroup.check(R.id.verbose);
-        mTop = findViewById(R.id.btn_top);
-        mBottom = findViewById(R.id.btn_bottom);
-        mTop.setOnClickListener(new View.OnClickListener() {
+        Button mBtnTop = findViewById(R.id.btn_top);
+        Button mBtnBottom = findViewById(R.id.btn_bottom);
+        Button mBtnClean = findViewById(R.id.btn_clean);
+        Button mBtnExport = findViewById(R.id.btn_export);
+        mBtnTop.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 if (mLogItemAdapter == null || mLogItemAdapter.getItemCount() == 0) {
                     return;
                 }
-                mLogList.smoothScrollToPosition(0);
+                mLogRv.scrollToPosition(0);
             }
         });
-        mBottom.setOnClickListener(new View.OnClickListener() {
+        mBtnBottom.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 if (mLogItemAdapter == null || mLogItemAdapter.getItemCount() == 0) {
                     return;
                 }
-                mLogList.smoothScrollToPosition(mLogItemAdapter.getItemCount() - 1);
+                mLogRv.scrollToPosition(mLogItemAdapter.getItemCount() - 1);
             }
         });
+
+        mBtnExport.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (mLogItemAdapter == null || mLogItemAdapter.getItemCount() == 0) {
+                    ToastUtils.showShort("暂无日志信息可以导出");
+                    return;
+                }
+
+                LogExportDialog logExportDialog = new LogExportDialog(new Object(), null);
+                logExportDialog.setOnButtonClickListener(new LogExportDialog.OnButtonClickListener() {
+                    @Override
+                    public void onSaveClick(LogExportDialog dialog) {
+                        export2File(100);
+                        dialog.dismiss();
+
+                    }
+
+                    @Override
+                    public void onShareClick(LogExportDialog dialog) {
+                        export2File(101);
+                        dialog.dismiss();
+
+                    }
+                });
+                showDialog(logExportDialog);
+
+            }
+        });
+
+        mBtnClean.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (mLogItemAdapter == null || mLogItemAdapter.getItemCount() == 0) {
+                    return;
+                }
+                counter = 0;
+                mLogItemAdapter.clearLog();
+            }
+        });
+    }
+
+
+    private void showDialog(DialogProvider provider) {
+        if (getActivity() == null || !(getActivity() instanceof FragmentActivity)) {
+            return;
+        }
+        UniversalDialogFragment dialog = new UniversalDialogFragment();
+        provider.setHost(dialog);
+        dialog.setProvider(provider);
+        provider.show(((FragmentActivity) getActivity()).getSupportFragmentManager());
+    }
+
+    /**
+     * 将日志信息保存到文件
+     *
+     * @param operateType 100 保存到本地  101 保存到本地并分享
+     */
+    private void export2File(final int operateType) {
+        ToastUtils.showShort("日志保存中,请稍后...");
+        final String logPath = PathUtils.getInternalAppFilesPath() + File.separator + AppUtils.getAppName() + "_" + TimeUtils.getNowString(new SimpleDateFormat("yyyy-MM-dd-HH:mm:ss")) + ".log";
+        final File logFile = new File(logPath);
+
+        ThreadUtils.executeByCpu(new ThreadUtils.Task<Boolean>() {
+            @Override
+            public Boolean doInBackground() throws Throwable {
+                try {
+                    List<LogLine> logLines = new ArrayList<>(mLogItemAdapter.getTrueValues());
+                    for (LogLine logLine : logLines) {
+                        String strLog = logLine.getProcessId() + "   " + "   " + logLine.getTimestamp() + "   " + logLine.getTag() + "   " + logLine.getLogLevelText() + "   " + logLine.getLogOutput() + "\n";
+                        FileIOUtils.writeFileFromString(logFile, strLog, true);
+                    }
+                    return true;
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    return false;
+                }
+            }
+
+            @Override
+            public void onSuccess(Boolean result) {
+                if (result) {
+                    ToastUtils.showShort("文件保存在:" + logPath);
+                    //分享
+                    if (operateType == 101) {
+                        FileUtil.systemShare(DoraemonKit.APPLICATION, logFile);
+                    }
+                }
+            }
+
+            @Override
+            public void onCancel() {
+                if (logFile.exists()) {
+                    FileUtils.delete(logFile);
+                }
+                ToastUtils.showShort("日志保存失败");
+            }
+
+            @Override
+            public void onFail(Throwable t) {
+                if (logFile.exists()) {
+                    FileUtils.delete(logFile);
+                }
+                ToastUtils.showShort("日志保存失败");
+            }
+        });
+
     }
 
 
@@ -181,22 +295,22 @@ public class LogInfoDokitView extends AbsDokitView implements LogInfoManager.OnL
     public void initDokitViewLayoutParams(DokitViewLayoutParams params) {
         params.flags = WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL;
         params.width = DokitViewLayoutParams.MATCH_PARENT;
-        params.height = DokitViewLayoutParams.WRAP_CONTENT;
+        params.height = DokitViewLayoutParams.MATCH_PARENT;
     }
 
     private int counter = 0;
     private static final int UPDATE_CHECK_INTERVAL = 200;
-    private boolean mAutoscrollToBottom = true;
+    private boolean mAutoScrollToBottom = true;
 
     @Override
     public void onLogCatch(List<LogLine> logLines) {
-        if (mLogList == null || mLogItemAdapter == null) {
+        if (mLogRv == null || mLogItemAdapter == null) {
             return;
         }
         if (!mIsLoaded) {
             mIsLoaded = true;
             findViewById(R.id.ll_loading).setVisibility(View.GONE);
-            mLogList.setVisibility(View.VISIBLE);
+            mLogRv.setVisibility(View.VISIBLE);
         }
         if (logLines.size() == 1) {
             mLogItemAdapter.addWithFilter(logLines.get(0), mLogFilter.getText(), true);
@@ -214,15 +328,15 @@ public class LogInfoDokitView extends AbsDokitView implements LogInfoManager.OnL
                 && mLogItemAdapter.getTrueValues().size() > MAX_LOG_LINE_NUM) {
             int numItemsToRemove = mLogItemAdapter.getTrueValues().size() - MAX_LOG_LINE_NUM;
             mLogItemAdapter.removeFirst(numItemsToRemove);
-            LogHelper.d(TAG, "truncating %d lines from log list to avoid out of memory errors:" + numItemsToRemove);
+            //LogHelper.d(TAG, "truncating %d lines from log list to avoid out of memory errors:" + numItemsToRemove);
         }
-        if (mAutoscrollToBottom) {
+        if (mAutoScrollToBottom) {
             scrollToBottom();
         }
     }
 
     private void scrollToBottom() {
-        mLogList.scrollToPosition(mLogItemAdapter.getItemCount() - 1);
+        mLogRv.scrollToPosition(mLogItemAdapter.getItemCount() - 1);
     }
 
     private int getSelectLogLevel() {
@@ -249,15 +363,27 @@ public class LogInfoDokitView extends AbsDokitView implements LogInfoManager.OnL
         isMaximize = false;
         if (isNormalMode()) {
             mLogHint.setVisibility(View.VISIBLE);
-            mLogPage.setVisibility(View.GONE);
+            mLogRvWrap.setVisibility(View.GONE);
+            FrameLayout.LayoutParams layoutParams = getNormalLayoutParams();
+            if (layoutParams == null) {
+                return;
+            }
+            layoutParams.width = WindowManager.LayoutParams.MATCH_PARENT;
+            layoutParams.height = WindowManager.LayoutParams.WRAP_CONTENT;
+            layoutParams.gravity = Gravity.START | Gravity.TOP;
+            getRootView().setLayoutParams(layoutParams);
         } else {
-            final WindowManager.LayoutParams layoutParams = getSystemLayoutParams();
+            mLogHint.setVisibility(View.VISIBLE);
+            mLogRvWrap.setVisibility(View.GONE);
+
+            WindowManager.LayoutParams layoutParams = getSystemLayoutParams();
+            if (layoutParams == null) {
+                return;
+            }
             layoutParams.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
             layoutParams.width = WindowManager.LayoutParams.MATCH_PARENT;
             layoutParams.height = WindowManager.LayoutParams.WRAP_CONTENT;
             layoutParams.gravity = Gravity.START | Gravity.TOP;
-            mLogHint.setVisibility(View.VISIBLE);
-            mLogPage.setVisibility(View.GONE);
             mWindowManager.updateViewLayout(getRootView(), layoutParams);
         }
 
@@ -272,15 +398,26 @@ public class LogInfoDokitView extends AbsDokitView implements LogInfoManager.OnL
         isMaximize = true;
         if (isNormalMode()) {
             mLogHint.setVisibility(View.GONE);
-            mLogPage.setVisibility(View.VISIBLE);
+            mLogRvWrap.setVisibility(View.VISIBLE);
+            FrameLayout.LayoutParams layoutParams = getNormalLayoutParams();
+            if (layoutParams == null) {
+                return;
+            }
+            layoutParams.width = WindowManager.LayoutParams.MATCH_PARENT;
+            layoutParams.height = WindowManager.LayoutParams.MATCH_PARENT;
+            layoutParams.gravity = Gravity.START | Gravity.TOP;
+            getRootView().setLayoutParams(layoutParams);
         } else {
-            final WindowManager.LayoutParams layoutParams = getSystemLayoutParams();
+            mLogHint.setVisibility(View.GONE);
+            mLogRvWrap.setVisibility(View.VISIBLE);
+            WindowManager.LayoutParams layoutParams = getSystemLayoutParams();
+            if (layoutParams == null) {
+                return;
+            }
             layoutParams.flags = WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL;
             layoutParams.width = WindowManager.LayoutParams.MATCH_PARENT;
             layoutParams.height = WindowManager.LayoutParams.MATCH_PARENT;
             layoutParams.gravity = Gravity.START | Gravity.TOP;
-            mLogHint.setVisibility(View.GONE);
-            mLogPage.setVisibility(View.VISIBLE);
             mWindowManager.updateViewLayout(getRootView(), layoutParams);
         }
 
@@ -302,6 +439,7 @@ public class LogInfoDokitView extends AbsDokitView implements LogInfoManager.OnL
         if (getActivity() != null && !getActivity().getClass().getSimpleName().equals(UniversalActivity.class.getSimpleName())) {
             minimize();
         }
+        LogInfoManager.getInstance().registerListener(this);
     }
 
     @Override
@@ -309,4 +447,8 @@ public class LogInfoDokitView extends AbsDokitView implements LogInfoManager.OnL
         return true;
     }
 
+    @Override
+    public boolean canDrag() {
+        return false;
+    }
 }

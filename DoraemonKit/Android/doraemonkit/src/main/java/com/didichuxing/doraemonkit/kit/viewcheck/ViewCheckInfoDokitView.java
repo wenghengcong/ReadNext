@@ -4,11 +4,12 @@ import android.app.Activity;
 import android.content.Context;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentManager;
-import android.support.v7.app.AppCompatActivity;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
+
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -20,9 +21,9 @@ import android.widget.TextView;
 import com.blankj.utilcode.util.ActivityUtils;
 import com.didichuxing.doraemonkit.R;
 import com.didichuxing.doraemonkit.config.ViewCheckConfig;
-import com.didichuxing.doraemonkit.ui.base.AbsDokitView;
-import com.didichuxing.doraemonkit.ui.base.DokitViewLayoutParams;
-import com.didichuxing.doraemonkit.ui.base.DokitViewManager;
+import com.didichuxing.doraemonkit.kit.core.AbsDokitView;
+import com.didichuxing.doraemonkit.kit.core.DokitViewLayoutParams;
+import com.didichuxing.doraemonkit.kit.core.DokitViewManager;
 import com.didichuxing.doraemonkit.util.ColorUtil;
 import com.didichuxing.doraemonkit.util.UIUtils;
 
@@ -93,7 +94,7 @@ public class ViewCheckInfoDokitView extends AbsDokitView implements
     public void initDokitViewLayoutParams(DokitViewLayoutParams params) {
         params.flags = DokitViewLayoutParams.FLAG_NOT_FOCUSABLE;
         params.x = 0;
-        params.y = UIUtils.getHeightPixels(getContext()) - UIUtils.dp2px(getContext(), 185);
+        params.y = UIUtils.getHeightPixels() - UIUtils.dp2px(185);
         params.width = getScreenShortSideLength();
         params.height = DokitViewLayoutParams.WRAP_CONTENT;
     }
@@ -110,7 +111,7 @@ public class ViewCheckInfoDokitView extends AbsDokitView implements
     @Override
     public void onClick(View v) {
         if (v == mClose) {
-            ViewCheckConfig.setViewCheckOpen(getContext(), false);
+            ViewCheckConfig.setViewCheckOpen( false);
             DokitViewManager.getInstance().detach(ViewCheckDrawDokitView.class.getSimpleName());
             DokitViewManager.getInstance().detach(ViewCheckInfoDokitView.class.getSimpleName());
             DokitViewManager.getInstance().detach(ViewCheckDokitView.class.getSimpleName());

@@ -1,19 +1,19 @@
 package com.didichuxing.doraemonkit.kit.parameter.cpu;
 
 import android.os.Bundle;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import android.view.View;
 
 import com.didichuxing.doraemonkit.R;
 import com.didichuxing.doraemonkit.config.PerformanceMemoryInfoConfig;
 import com.didichuxing.doraemonkit.constant.BundleKey;
-import com.didichuxing.doraemonkit.kit.common.PerformanceDataManager;
-import com.didichuxing.doraemonkit.kit.common.PerformanceFragment;
+import com.didichuxing.doraemonkit.kit.performance.PerformanceDataManager;
+import com.didichuxing.doraemonkit.kit.performance.PerformanceFragment;
 import com.didichuxing.doraemonkit.kit.parameter.AbsParameterFragment;
-import com.didichuxing.doraemonkit.ui.realtime.datasource.DataSourceFactory;
-import com.didichuxing.doraemonkit.ui.setting.SettingItem;
-import com.didichuxing.doraemonkit.ui.setting.SettingItemAdapter;
+import com.didichuxing.doraemonkit.kit.performance.datasource.DataSourceFactory;
+import com.didichuxing.doraemonkit.kit.core.SettingItem;
+import com.didichuxing.doraemonkit.kit.core.SettingItemAdapter;
 
 import java.util.Collection;
 import java.util.List;
@@ -30,7 +30,7 @@ public class CpuMainPageFragment extends AbsParameterFragment {
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        PerformanceDataManager.getInstance().init(getContext());
+        PerformanceDataManager.getInstance().init();
     }
 
     @Override
@@ -46,7 +46,6 @@ public class CpuMainPageFragment extends AbsParameterFragment {
     @Override
     protected Collection<SettingItem> getSettingItems(List<SettingItem> list) {
         list.add(new SettingItem(R.string.dk_cpu_detection_switch, PerformanceMemoryInfoConfig.CPU_STATUS));
-        //list.add(new SettingItem(R.string.dk_item_cache_log, R.drawable.dk_more_icon));
         return list;
     }
 
@@ -55,7 +54,6 @@ public class CpuMainPageFragment extends AbsParameterFragment {
         return new SettingItemAdapter.OnSettingItemSwitchListener() {
             @Override
             public void onSettingItemSwitch(View view, SettingItem data, boolean on) {
-                // TODO: 2019-10-11 测试 需要恢复
                 if (on) {
                     startMonitor();
                 } else {

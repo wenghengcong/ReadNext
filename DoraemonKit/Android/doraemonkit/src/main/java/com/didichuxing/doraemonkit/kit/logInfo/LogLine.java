@@ -1,9 +1,9 @@
-package com.didichuxing.doraemonkit.kit.logInfo;
+package com.didichuxing.doraemonkit.kit.loginfo;
 
 import android.text.TextUtils;
 import android.util.Log;
 
-import com.didichuxing.doraemonkit.kit.logInfo.reader.ScrubberUtils;
+import com.didichuxing.doraemonkit.kit.loginfo.reader.ScrubberUtils;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -51,7 +51,8 @@ public class LogLine {
                 && originalLine.length() >= TIMESTAMP_LENGTH) {
             String timestamp = originalLine.substring(0, TIMESTAMP_LENGTH - 1);
             logLine.setTimestamp(timestamp);
-            startIdx = TIMESTAMP_LENGTH; // cut off timestamp
+            // cut off timestamp
+            startIdx = TIMESTAMP_LENGTH;
         }
 
         Matcher matcher = logPattern.matcher(originalLine);

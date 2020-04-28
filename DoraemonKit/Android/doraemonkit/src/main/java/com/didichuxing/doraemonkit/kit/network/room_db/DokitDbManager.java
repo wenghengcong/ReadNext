@@ -3,14 +3,14 @@ package com.didichuxing.doraemonkit.kit.network.room_db;
 import android.text.TextUtils;
 
 import com.blankj.utilcode.util.ThreadUtils;
-import com.chad.library.adapter.base.entity.MultiItemEntity;
-import com.didichuxing.doraemonkit.BuildConfig;
-import com.didichuxing.doraemonkit.ui.base.DokitViewManager;
+import com.didichuxing.doraemonkit.constant.DokitConstant;
+import com.didichuxing.doraemonkit.kit.network.okhttp.interceptor.MockInterceptor;
+import com.didichuxing.doraemonkit.kit.core.DokitViewManager;
+import com.didichuxing.doraemonkit.util.LogHelper;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -27,11 +27,15 @@ import java.util.Map;
  * ================================================
  */
 public class DokitDbManager<T extends AbsMockApiBean> {
+    private static final String TAG = "DokitDbManager";
 
-
-    private final DokitDatabase mDb = DokitViewManager.getInstance().getDb();
+    /**
+     * key 为path 可能存在path是一样的 所以value为List
+     */
     private Map<String, List<T>> mGlobalInterceptApiMaps = new HashMap<>();
-
+    /**
+     * key 为path 可能存在path是一样的 所以value为List
+     */
     private Map<String, List<T>> mGlobalTemplateApiMaps = new HashMap<>();
 
 
@@ -73,12 +77,23 @@ public class DokitDbManager<T extends AbsMockApiBean> {
         ThreadUtils.executeByIo(new ThreadUtils.SimpleTask<List<T>>() {
             @Override
             public List<T> doInBackground() throws Throwable {
-                return (List<T>) mDb.mockApiDao().getAllInterceptApi();
+                DokitDatabase db = DokitViewManager.getInstance().getDb();
+                if (db != null && db.mockApiDao() != null) {
+                    return (List<T>) db.mockApiDao().getAllInterceptApi();
+                } else {
+                    throw new NullPointerException("mDb == null || mDb.mockApiDao()");
+                }
             }
 
             @Override
             public void onSuccess(List<T> result) {
                 list2mapByIntercept(result);
+            }
+
+            @Override
+            public void onFail(Throwable t) {
+                super.onFail(t);
+                LogHelper.e(TAG, "error====>" + t.getMessage());
             }
         });
     }
@@ -91,12 +106,24 @@ public class DokitDbManager<T extends AbsMockApiBean> {
         ThreadUtils.executeByIo(new ThreadUtils.SimpleTask<List<T>>() {
             @Override
             public List<T> doInBackground() throws Throwable {
-                return (List<T>) mDb.mockApiDao().getAllTemplateApi();
+                DokitDatabase db = DokitViewManager.getInstance().getDb();
+                if (db != null && db.mockApiDao() != null) {
+                    return (List<T>) db.mockApiDao().getAllTemplateApi();
+                } else {
+                    throw new NullPointerException("mDb == null || mDb.mockApiDao()");
+                }
+
             }
 
             @Override
             public void onSuccess(List<T> result) {
                 list2mapByTemplate(result);
+            }
+
+            @Override
+            public void onFail(Throwable t) {
+                super.onFail(t);
+                LogHelper.e(TAG, "error====>" + t.getMessage());
             }
         });
     }
@@ -106,20 +133,39 @@ public class DokitDbManager<T extends AbsMockApiBean> {
      * 数据库中获取指定的 template api
      */
     public T getTemplateApiByIdInDb(String id) {
-        return (T) mDb.mockApiDao().findTemplateApiById(id);
+        return (T) DokitViewManager.getInstance().getDb().mockApiDao().findTemplateApiById(id);
     }
 
 
     /**
-     * 内存中获取指定的 template api
+     * 数据库中获取指定的mock intercept api
      */
-    public T getTemplateApiByIdInMap(String path, String id) {
-        if (mGlobalTemplateApiMaps.get(path) == null) {
+    public T getInterceptApiByIdInDb(String id) {
+        return (T) DokitViewManager.getInstance().getDb().mockApiDao().findInterceptApiById(id);
+    }
+
+    /**
+     * 内存中中获取指定的mock intercept api
+     */
+    public T getInterceptApiByIdInMap(String path, String id, int fromSDK) {
+
+        if (mGlobalInterceptApiMaps == null) {
+            return null;
+        }
+        //先进行全匹配
+        List<T> mGlobalInterceptApis = mGlobalInterceptApiMaps.get(path);
+        if (mGlobalInterceptApis == null) {
+            path = DokitConstant.dealDidiPlatformPath(path, fromSDK);
+            mGlobalInterceptApis = mGlobalInterceptApiMaps.get(path);
+        }
+
+        //再进行滴滴内部匹配
+        if (mGlobalInterceptApis == null) {
             return null;
         }
 
         T selectedMockApi = null;
-        for (T mockApi : mGlobalTemplateApiMaps.get(path)) {
+        for (T mockApi : mGlobalInterceptApis) {
             if (mockApi.getId().equals(id)) {
                 selectedMockApi = mockApi;
                 break;
@@ -129,24 +175,26 @@ public class DokitDbManager<T extends AbsMockApiBean> {
         return selectedMockApi;
     }
 
-
     /**
-     * 数据库中获取指定的mock intercept api
+     * 内存中获取指定的 template api
      */
-    public T getInterceptApiByIdInDb(String id) {
-        return (T) mDb.mockApiDao().findInterceptApiById(id);
-    }
-
-    /**
-     * 内存中中获取指定的mock intercept api
-     */
-    public T getInterceptApiByIdInMap(String path, String id) {
-        if (mGlobalInterceptApiMaps.get(path) == null) {
+    public T getTemplateApiByIdInMap(String path, String id, int fromSDK) {
+        if (mGlobalTemplateApiMaps == null) {
+            return null;
+        }
+        List<T> mGlobalTemplateApis = mGlobalTemplateApiMaps.get(path);
+        //先进行全匹配
+        if (mGlobalTemplateApis == null) {
+            path = DokitConstant.dealDidiPlatformPath(path, fromSDK);
+            mGlobalTemplateApis = mGlobalTemplateApiMaps.get(path);
+        }
+        //再进行滴滴内部匹配
+        if (mGlobalTemplateApis == null) {
             return null;
         }
 
         T selectedMockApi = null;
-        for (T mockApi : mGlobalInterceptApiMaps.get(path)) {
+        for (T mockApi : mGlobalTemplateApis) {
             if (mockApi.getId().equals(id)) {
                 selectedMockApi = mockApi;
                 break;
@@ -165,7 +213,7 @@ public class DokitDbManager<T extends AbsMockApiBean> {
         ThreadUtils.executeByIo(new ThreadUtils.SimpleTask<Object>() {
             @Override
             public Object doInBackground() throws Throwable {
-                mDb.mockApiDao().insertAllInterceptApi(mockApis);
+                DokitViewManager.getInstance().getDb().mockApiDao().insertAllInterceptApi(mockApis);
                 //更新本地数据
                 getAllInterceptApis();
                 return null;
@@ -188,7 +236,7 @@ public class DokitDbManager<T extends AbsMockApiBean> {
         ThreadUtils.executeByIo(new ThreadUtils.SimpleTask<Void>() {
             @Override
             public Void doInBackground() throws Throwable {
-                mDb.mockApiDao().insertAllTemplateApi(mockApis);
+                DokitViewManager.getInstance().getDb().mockApiDao().insertAllTemplateApi(mockApis);
                 return null;
             }
 
@@ -211,7 +259,7 @@ public class DokitDbManager<T extends AbsMockApiBean> {
         ThreadUtils.executeByIo(new ThreadUtils.SimpleTask<Void>() {
             @Override
             public Void doInBackground() throws Throwable {
-                mDb.mockApiDao().updateInterceptApi(mockApi);
+                DokitViewManager.getInstance().getDb().mockApiDao().updateInterceptApi(mockApi);
 
                 return null;
             }
@@ -236,7 +284,7 @@ public class DokitDbManager<T extends AbsMockApiBean> {
         ThreadUtils.executeByIo(new ThreadUtils.SimpleTask<Object>() {
             @Override
             public Object doInBackground() throws Throwable {
-                mDb.mockApiDao().updateTemplateApi(mockApi);
+                DokitViewManager.getInstance().getDb().mockApiDao().updateTemplateApi(mockApi);
                 //更新本地数据
                 getAllTemplateApis();
                 return null;
@@ -287,15 +335,33 @@ public class DokitDbManager<T extends AbsMockApiBean> {
     public static final int MOCK_API_TEMPLATE = 2;
 
     /**
+     * 来自滴滴内部SDK
+     */
+    public static int FROM_SDK_DIDI = 100;
+    /**
+     * 来自外部SDK
+     */
+    public static int FROM_SDK_OTHER = 101;
+
+    /**
      * 返回命中的id
      *
      * @param path
-     * @param strLocalQuery
+     * @param jsonQuery
      * @param operateType
      * @return
      */
-    public String isMockMatched(String path, String strLocalQuery, int operateType) {
-        T mockApi = mockMatched(path, strLocalQuery, operateType);
+    public String isMockMatched(String path, String jsonQuery, String jsonRequestBody, int operateType, int fromSDK) {
+        //如果是非字符串类型的请求体 直接不匹配
+        if (!TextUtils.isEmpty(jsonQuery) && jsonQuery.equals(MockInterceptor.NOT_STRING_CONTENT_FLAG)) {
+            return "";
+        }
+
+        if (!TextUtils.isEmpty(jsonRequestBody) && jsonRequestBody.equals(MockInterceptor.NOT_STRING_CONTENT_FLAG)) {
+            return "";
+        }
+
+        T mockApi = mockMatched(path, jsonQuery, jsonRequestBody, operateType, fromSDK);
         if (mockApi == null) {
             return "";
         }
@@ -307,24 +373,35 @@ public class DokitDbManager<T extends AbsMockApiBean> {
      * 通过path和query查询指定的对象
      *
      * @param path
-     * @param strLocalQuery
-     * @param strLocalQuery 1:代表拦截 2：代表模板
+     * @param jsonQuery
+     * @param operateType 1:代表拦截 2：代表模板
      * @return
      */
-    private T mockMatched(String path, String strLocalQuery, int operateType) {
-        List<T> mockApis;
-        if (operateType == 1) {
+    private T mockMatched(String path, String jsonQuery, String jsonRequestBody, int operateType, int fromSDK) {
+        List<T> mockApis = null;
+        if (operateType == DokitDbManager.MOCK_API_INTERCEPT) {
+            //先进行一次全匹配
             mockApis = mGlobalInterceptApiMaps.get(path);
-        } else {
+            //滴滴内部sdk匹配
+            if (mockApis == null) {
+                path = DokitConstant.dealDidiPlatformPath(path, fromSDK);
+                mockApis = mGlobalInterceptApiMaps.get(path);
+            }
+        } else if (operateType == DokitDbManager.MOCK_API_TEMPLATE) {
+            //先进行一次全匹配
             mockApis = mGlobalTemplateApiMaps.get(path);
-
+            //滴滴内部sdk匹配
+            if (mockApis == null) {
+                path = DokitConstant.dealDidiPlatformPath(path, fromSDK);
+                mockApis = mGlobalTemplateApiMaps.get(path);
+            }
         }
         if (mockApis == null) {
             return null;
         }
         T matchedMockApi = null;
         for (T mockApi : mockApis) {
-            if (mockApi.isOpen() && queriesMatched(strLocalQuery, mockApi)) {
+            if (mockApi.isOpen() && queriesMatched(jsonQuery, mockApi) && bodyMatched(jsonRequestBody, mockApi)) {
                 matchedMockApi = mockApi;
                 break;
             }
@@ -337,39 +414,100 @@ public class DokitDbManager<T extends AbsMockApiBean> {
     /**
      * queries 是否命中
      *
-     * @param strLocalQuery
+     * @param jsonQuery
      * @param mockApi
      */
-    private boolean queriesMatched(String strLocalQuery, T mockApi) {
+    private boolean queriesMatched(String jsonQuery, T mockApi) {
+        //{}代表没有配置query
         String mockQuery = mockApi.getQuery();
-        //没有配置query参数
-        if (TextUtils.isEmpty(mockQuery) && TextUtils.isEmpty(strLocalQuery)) {
+        boolean mockQueryIsEmpty = TextUtils.isEmpty(mockQuery) || "{}".equals(mockQuery);
+        //平台没有配置query参数且本地也没有query参数
+        if (mockQueryIsEmpty && TextUtils.isEmpty(jsonQuery)) {
             return true;
         }
 
-        if (TextUtils.isEmpty(strLocalQuery) && !TextUtils.isEmpty(mockQuery)) {
-            return false;
+        //本地有参数 平台没有配置参数
+        if (!TextUtils.isEmpty(jsonQuery) && mockQueryIsEmpty) {
+            return true;
         }
 
-        if (!TextUtils.isEmpty(strLocalQuery) && TextUtils.isEmpty(mockQuery)) {
+        //本地没有参数 但是平台有参数
+        if (TextUtils.isEmpty(jsonQuery) && !mockQueryIsEmpty) {
             return false;
         }
-
 
         //匹配query
-        if (!TextUtils.isEmpty(strLocalQuery) && !TextUtils.isEmpty(mockQuery)) {
+        if (!TextUtils.isEmpty(jsonQuery) && !mockQueryIsEmpty) {
             try {
-                JSONObject mockQueryObject = new JSONObject(mockQuery);
+                JSONObject jsonQueryLocal = new JSONObject(jsonQuery);
+                JSONObject jsonQueryMock = new JSONObject(mockQuery);
                 List<String> keys = new ArrayList<>();
-                Iterator<String> iterator = mockQueryObject.keys();
+                //通过平台端的来主动匹配
+                Iterator<String> iterator = jsonQueryMock.keys();
+                while (iterator.hasNext()) {
+                    keys.add(iterator.next());
+                }
+                int count = 0;
+
+                for (int index = 0; index < keys.size(); index++) {
+                    String key = keys.get(index);
+                    if (jsonQueryLocal.has(key) && jsonQueryMock.getString(key).equals(jsonQueryLocal.get(key))) {
+                        count++;
+                    }
+                }
+
+                if (count == keys.size()) {
+                    return true;
+                }
+            } catch (JSONException e) {
+                e.printStackTrace();
+                return false;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * body 是否命中
+     *
+     * @param jsonRequestBody
+     * @param mockApi
+     */
+    private boolean bodyMatched(String jsonRequestBody, T mockApi) {
+        //{}代表没有配置query
+        String mockBody = mockApi.getBody();
+        boolean mockQueryIsEmpty = TextUtils.isEmpty(mockBody) || "{}".equals(mockBody);
+        //平台没有配置query参数且本地也没有query参数
+        if (mockQueryIsEmpty && TextUtils.isEmpty(jsonRequestBody)) {
+            return true;
+        }
+
+        //本地有参数 平台没有配置参数
+        if (!TextUtils.isEmpty(jsonRequestBody) && mockQueryIsEmpty) {
+            return true;
+        }
+
+        //本地没有参数 但是平台有参数
+        if (TextUtils.isEmpty(jsonRequestBody) && !mockQueryIsEmpty) {
+            return false;
+        }
+
+        //匹配body
+        if (!TextUtils.isEmpty(jsonRequestBody) && !mockQueryIsEmpty) {
+            try {
+                JSONObject jsonBodyLocal = new JSONObject(jsonRequestBody);
+                JSONObject jsonBodyMock = new JSONObject(mockBody);
+
+                List<String> keys = new ArrayList<>();
+                Iterator<String> iterator = jsonBodyMock.keys();
                 while (iterator.hasNext()) {
                     keys.add(iterator.next());
                 }
                 int count = 0;
                 for (int index = 0; index < keys.size(); index++) {
-                    String param = keys.get(index) + "=" + mockQueryObject.getString(keys.get(index));
-                    //判断本地是否包含配置的query
-                    if (strLocalQuery.contains(param)) {
+                    String key = keys.get(index);
+                    if (jsonBodyLocal.has(key) && jsonBodyMock.getString(key).equals(jsonBodyLocal.get(key))) {
                         count++;
                     }
                 }

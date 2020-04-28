@@ -1,7 +1,7 @@
 package com.didichuxing.doraemonkit.kit.network.room_db;
 
-import android.arch.persistence.room.Database;
-import android.arch.persistence.room.RoomDatabase;
+import androidx.room.Database;
+import androidx.room.RoomDatabase;
 
 /**
  * ================================================
@@ -12,7 +12,7 @@ import android.arch.persistence.room.RoomDatabase;
  * 修订历史：
  * ================================================
  */
-@Database(entities = {MockInterceptApiBean.class, MockTemplateApiBean.class}, version = 1, exportSchema = false)
+@Database(entities = {MockInterceptApiBean.class, MockTemplateApiBean.class}, version = 2, exportSchema = false)
 public abstract class DokitDatabase extends RoomDatabase {
     abstract MockApiDao mockApiDao();
 }

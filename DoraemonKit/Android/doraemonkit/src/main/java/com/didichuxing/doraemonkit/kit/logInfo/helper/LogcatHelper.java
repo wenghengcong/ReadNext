@@ -1,4 +1,4 @@
-package com.didichuxing.doraemonkit.kit.logInfo.helper;
+package com.didichuxing.doraemonkit.kit.loginfo.helper;
 
 import com.didichuxing.doraemonkit.util.LogHelper;
 
@@ -54,11 +54,11 @@ public class LogcatHelper {
                 result = line;
             }
         } catch (IOException e) {
-            LogHelper.e(TAG, "unexpected exception :"+e);
+            e.printStackTrace();
         } finally {
             if (dumpLogcatProcess != null) {
                 RuntimeHelper.destroy(dumpLogcatProcess);
-                LogHelper.d(TAG,"destroyed 1 dump logcat process");
+               // LogHelper.d(TAG,"destroyed 1 dump logcat process");
             }
 
         }

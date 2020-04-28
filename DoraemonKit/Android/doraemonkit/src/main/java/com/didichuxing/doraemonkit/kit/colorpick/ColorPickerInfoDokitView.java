@@ -2,7 +2,9 @@ package com.didichuxing.doraemonkit.kit.colorpick;
 
 import android.content.Context;
 import android.graphics.drawable.ColorDrawable;
-import android.support.annotation.ColorInt;
+
+import androidx.annotation.ColorInt;
+
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.WindowManager;
@@ -13,10 +15,10 @@ import android.widget.TextView;
 import com.blankj.utilcode.util.ActivityUtils;
 import com.didichuxing.doraemonkit.R;
 import com.didichuxing.doraemonkit.config.ColorPickConfig;
-import com.didichuxing.doraemonkit.ui.TranslucentActivity;
-import com.didichuxing.doraemonkit.ui.base.AbsDokitView;
-import com.didichuxing.doraemonkit.ui.base.DokitViewLayoutParams;
-import com.didichuxing.doraemonkit.ui.base.DokitViewManager;
+import com.didichuxing.doraemonkit.kit.core.TranslucentActivity;
+import com.didichuxing.doraemonkit.kit.core.AbsDokitView;
+import com.didichuxing.doraemonkit.kit.core.DokitViewLayoutParams;
+import com.didichuxing.doraemonkit.kit.core.DokitViewManager;
 import com.didichuxing.doraemonkit.util.ColorUtil;
 import com.didichuxing.doraemonkit.util.UIUtils;
 
@@ -43,7 +45,7 @@ public class ColorPickerInfoDokitView extends AbsDokitView {
         params.width = getScreenShortSideLength();
         params.height = WindowManager.LayoutParams.WRAP_CONTENT;
         params.x = 0;
-        params.y = UIUtils.getHeightPixels(getContext()) - UIUtils.dp2px(getContext(), 95);
+        params.y = UIUtils.getHeightPixels() - UIUtils.dp2px(95);
     }
 
     @Override
@@ -58,7 +60,8 @@ public class ColorPickerInfoDokitView extends AbsDokitView {
         mClose.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                ColorPickConfig.setColorPickOpen(getContext(), false);
+                ColorPickManager.getInstance().setColorPickerDokitView(null);
+                ColorPickConfig.setColorPickOpen(false);
                 DokitViewManager.getInstance().detach(ColorPickerDokitView.class.getSimpleName());
                 DokitViewManager.getInstance().detach(ColorPickerInfoDokitView.class.getSimpleName());
                 //取色器kit是依赖在当前透明的Activity上的 所以关闭控件时需要finish

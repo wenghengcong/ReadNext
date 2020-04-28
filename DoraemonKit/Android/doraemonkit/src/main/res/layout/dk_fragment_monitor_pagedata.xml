@@ -6,7 +6,7 @@
     android:orientation="vertical"
     android:background="@color/dk_color_FFFFFF">
 
-    <com.didichuxing.doraemonkit.ui.widget.titlebar.TitleBar
+    <com.didichuxing.doraemonkit.widget.titlebar.TitleBar
         android:id="@+id/title_bar"
         android:layout_width="match_parent"
         android:layout_height="44dp"
@@ -16,7 +16,7 @@
     <View
         style="@style/DK.Shadow.Bottom" />
 
-    <android.support.v7.widget.RecyclerView
+    <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/info_list"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

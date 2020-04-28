@@ -1,13 +1,11 @@
 package com.didichuxing.doraemonkit.kit.network.room_db;
 
-import android.arch.persistence.room.ColumnInfo;
-import android.arch.persistence.room.Entity;
-import android.arch.persistence.room.Ignore;
-import android.arch.persistence.room.PrimaryKey;
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
+import androidx.room.ColumnInfo;
+import androidx.room.Entity;
+import androidx.room.Ignore;
+import androidx.room.PrimaryKey;
 
-import com.blankj.utilcode.util.EncodeUtils;
-import com.chad.library.adapter.base.entity.MultiItemEntity;
 import com.didichuxing.doraemonkit.kit.network.ui.InterceptMockAdapter;
 
 import java.io.Serializable;
@@ -22,7 +20,7 @@ import java.io.Serializable;
  * ================================================
  */
 @Entity(tableName = "mock_template_api")
-public class MockTemplateApiBean implements AbsMockApiBean, Serializable {
+public class MockTemplateApiBean extends AbsMockApiBean implements Serializable {
     /**
      * 来自真实接口返回数据
      */
@@ -46,6 +44,10 @@ public class MockTemplateApiBean implements AbsMockApiBean, Serializable {
     private String method;
     @ColumnInfo(name = "query")
     private String query;
+
+    @ColumnInfo(name = "body")
+    private String body;
+
     @ColumnInfo(name = "fromType")
     private String fromType;
     /**
@@ -79,13 +81,14 @@ public class MockTemplateApiBean implements AbsMockApiBean, Serializable {
     }
 
     @Ignore
-    public MockTemplateApiBean(@NonNull String id, String mockApiName, String path, String method, String fromType, String query, String group, String createPerson, String modifyPerson, String projectId) {
+    public MockTemplateApiBean(@NonNull String id, String mockApiName, String path, String method, String fromType, String query, String body, String group, String createPerson, String modifyPerson, String projectId) {
         this.id = id;
         this.mockApiName = mockApiName;
         this.path = path;
         this.method = method;
         this.fromType = fromType;
         this.query = query;
+        this.body = body;
         this.group = group;
         this.createPerson = createPerson;
         this.modifyPerson = modifyPerson;
@@ -138,6 +141,15 @@ public class MockTemplateApiBean implements AbsMockApiBean, Serializable {
         this.query = query;
     }
 
+    @Override
+    public String getBody() {
+        return body;
+    }
+
+    public void setBody(String body) {
+        this.body = body;
+    }
+
     public String getFromType() {
         return fromType;
     }
@@ -185,10 +197,6 @@ public class MockTemplateApiBean implements AbsMockApiBean, Serializable {
         this.isOpen = open;
     }
 
-    @Override
-    public int getItemType() {
-        return InterceptMockAdapter.TYPE_CONTENT;
-    }
 
     public String getStrResponse() {
         return strResponse;

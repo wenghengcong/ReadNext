@@ -35,10 +35,20 @@ public class CrashCaptureKit extends AbstractKit {
     @Override
     public void onAppInit(Context context) {
         CrashCaptureManager.getInstance().init(context);
-        if (CrashCaptureConfig.isCrashCaptureOpen(context)) {
+        if (CrashCaptureConfig.isCrashCaptureOpen()) {
             CrashCaptureManager.getInstance().start();
         } else {
             CrashCaptureManager.getInstance().stop();
         }
+    }
+
+    @Override
+    public boolean isInnerKit() {
+        return true;
+    }
+
+    @Override
+    public String innerKitId() {
+        return "dokit_sdk_comm_ck_crash";
     }
 }

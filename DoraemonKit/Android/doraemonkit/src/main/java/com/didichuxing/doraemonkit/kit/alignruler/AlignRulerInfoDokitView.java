@@ -12,9 +12,9 @@ import android.widget.TextView;
 import com.blankj.utilcode.util.ActivityUtils;
 import com.didichuxing.doraemonkit.R;
 import com.didichuxing.doraemonkit.config.AlignRulerConfig;
-import com.didichuxing.doraemonkit.ui.base.AbsDokitView;
-import com.didichuxing.doraemonkit.ui.base.DokitViewLayoutParams;
-import com.didichuxing.doraemonkit.ui.base.DokitViewManager;
+import com.didichuxing.doraemonkit.kit.core.AbsDokitView;
+import com.didichuxing.doraemonkit.kit.core.DokitViewLayoutParams;
+import com.didichuxing.doraemonkit.kit.core.DokitViewManager;
 import com.didichuxing.doraemonkit.util.UIUtils;
 
 /**
@@ -30,8 +30,8 @@ public class AlignRulerInfoDokitView extends AbsDokitView implements AlignRulerM
 
     @Override
     public void onCreate(Context context) {
-        mWindowWidth = UIUtils.getWidthPixels(context);
-        mWindowHeight = UIUtils.getHeightPixels(context);
+        mWindowWidth = UIUtils.getWidthPixels();
+        mWindowHeight = UIUtils.getHeightPixels();
     }
 
     @Override
@@ -46,13 +46,12 @@ public class AlignRulerInfoDokitView extends AbsDokitView implements AlignRulerM
     }
 
 
-
     @Override
     public void initDokitViewLayoutParams(DokitViewLayoutParams params) {
         params.width = getScreenShortSideLength();
         params.height = WindowManager.LayoutParams.WRAP_CONTENT;
         params.x = 0;
-        params.y = UIUtils.getHeightPixels(getContext()) - UIUtils.dp2px(getContext(), 95);
+        params.y = UIUtils.getHeightPixels() - UIUtils.dp2px(95);
     }
 
     @Override
@@ -82,7 +81,7 @@ public class AlignRulerInfoDokitView extends AbsDokitView implements AlignRulerM
         mClose.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                AlignRulerConfig.setAlignRulerOpen(getContext(), false);
+                AlignRulerConfig.setAlignRulerOpen(false);
                 DokitViewManager.getInstance().detach(AlignRulerMarkerDokitView.class.getSimpleName());
                 DokitViewManager.getInstance().detach(AlignRulerLineDokitView.class.getSimpleName());
                 DokitViewManager.getInstance().detach(AlignRulerInfoDokitView.class.getSimpleName());

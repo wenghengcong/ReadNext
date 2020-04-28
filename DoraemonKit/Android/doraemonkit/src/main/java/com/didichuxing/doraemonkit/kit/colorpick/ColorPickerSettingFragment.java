@@ -5,20 +5,24 @@ import android.content.Context;
 import android.content.Intent;
 import android.media.projection.MediaProjectionManager;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
 import android.view.View;
 
 import com.didichuxing.doraemonkit.R;
 import com.didichuxing.doraemonkit.config.ColorPickConfig;
 import com.didichuxing.doraemonkit.constant.DokitConstant;
 import com.didichuxing.doraemonkit.constant.RequestCode;
-import com.didichuxing.doraemonkit.ui.base.BaseFragment;
-import com.didichuxing.doraemonkit.ui.base.DokitIntent;
-import com.didichuxing.doraemonkit.ui.base.DokitViewManager;
+import com.didichuxing.doraemonkit.kit.core.BaseFragment;
+import com.didichuxing.doraemonkit.kit.core.DokitIntent;
+import com.didichuxing.doraemonkit.kit.core.DokitViewManager;
 
 /**
- * Created by wanglikun on 2018/9/15.
+ * @author wanglikun
+ * @date 2018/9/15
+ * 屏幕取色器fragment
  */
 
 public class ColorPickerSettingFragment extends BaseFragment {
@@ -27,8 +31,9 @@ public class ColorPickerSettingFragment extends BaseFragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        requestCaptureScreen();
-        ColorPickConfig.setColorPickOpen(getContext(), true);
+        if (requestCaptureScreen()) {
+            ColorPickConfig.setColorPickOpen(true);
+        }
     }
 
     private boolean requestCaptureScreen() {
@@ -70,10 +75,11 @@ public class ColorPickerSettingFragment extends BaseFragment {
         DokitViewManager.getInstance().attach(pageIntent);
 
         pageIntent = new DokitIntent(ColorPickerDokitView.class);
-        pageIntent.bundle = data.getExtras();
+        Bundle bundle = new Bundle();
+        bundle.putParcelable("data", data);
+        pageIntent.bundle = bundle;
         pageIntent.mode = DokitIntent.MODE_SINGLE_INSTANCE;
         DokitViewManager.getInstance().attach(pageIntent);
-
 
     }
 

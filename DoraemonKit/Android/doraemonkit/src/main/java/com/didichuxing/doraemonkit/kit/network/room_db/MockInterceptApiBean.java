@@ -1,13 +1,11 @@
 package com.didichuxing.doraemonkit.kit.network.room_db;
 
-import android.arch.persistence.room.ColumnInfo;
-import android.arch.persistence.room.Entity;
-import android.arch.persistence.room.Ignore;
-import android.arch.persistence.room.PrimaryKey;
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
+import androidx.room.ColumnInfo;
+import androidx.room.Entity;
+import androidx.room.Ignore;
+import androidx.room.PrimaryKey;
 
-import com.blankj.utilcode.util.EncodeUtils;
-import com.chad.library.adapter.base.entity.MultiItemEntity;
 import com.didichuxing.doraemonkit.kit.network.bean.MockApiResponseBean;
 import com.didichuxing.doraemonkit.kit.network.ui.InterceptMockAdapter;
 
@@ -23,7 +21,7 @@ import java.util.List;
  * ================================================
  */
 @Entity(tableName = "mock_intercept_api")
-public class MockInterceptApiBean implements AbsMockApiBean {
+public class MockInterceptApiBean extends AbsMockApiBean {
     /**
      * /设置主键 并且组建不为null
      */
@@ -39,6 +37,8 @@ public class MockInterceptApiBean implements AbsMockApiBean {
     private String method;
     @ColumnInfo(name = "query")
     private String query;
+    @ColumnInfo(name = "body")
+    private String body;
     @ColumnInfo(name = "fromType")
     private String fromType;
     @ColumnInfo(name = "selected_scene_name")
@@ -65,18 +65,18 @@ public class MockInterceptApiBean implements AbsMockApiBean {
     }
 
     @Ignore
-    public MockInterceptApiBean(@NonNull String id, String mockApiName, String path, String method, String fromType, String query, String group, String createPerson, String modifyPerson, List<MockApiResponseBean.DataBean.DatalistBean.SceneListBean> sceneList) {
+    public MockInterceptApiBean(@NonNull String id, String mockApiName, String path, String method, String fromType, String query, String body, String group, String createPerson, String modifyPerson, List<MockApiResponseBean.DataBean.DatalistBean.SceneListBean> sceneList) {
         this.id = id;
         this.mockApiName = mockApiName;
         this.path = path;
         this.method = method;
         this.fromType = fromType;
         this.query = query;
+        this.body = body;
         this.group = group;
         this.createPerson = createPerson;
         this.modifyPerson = modifyPerson;
         this.sceneList = sceneList;
-
     }
 
     @Override
@@ -117,6 +117,15 @@ public class MockInterceptApiBean implements AbsMockApiBean {
 
     public void setQuery(String query) {
         this.query = query;
+    }
+
+    @Override
+    public String getBody() {
+        return body;
+    }
+
+    public void setBody(String body) {
+        this.body = body;
     }
 
     public String getFromType() {
@@ -190,9 +199,5 @@ public class MockInterceptApiBean implements AbsMockApiBean {
         this.isOpen = open;
     }
 
-    @Override
-    public int getItemType() {
-        return InterceptMockAdapter.TYPE_CONTENT;
-    }
 
 }

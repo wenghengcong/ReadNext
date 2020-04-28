@@ -1,10 +1,9 @@
-package com.didichuxing.doraemonkit.kit.logInfo.reader;
+package com.didichuxing.doraemonkit.kit.loginfo.reader;
 
 import android.text.TextUtils;
 
-import com.didichuxing.doraemonkit.kit.logInfo.helper.LogcatHelper;
-import com.didichuxing.doraemonkit.kit.logInfo.helper.RuntimeHelper;
-import com.didichuxing.doraemonkit.util.LogHelper;
+import com.didichuxing.doraemonkit.kit.loginfo.helper.LogcatHelper;
+import com.didichuxing.doraemonkit.kit.loginfo.helper.RuntimeHelper;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -14,7 +13,7 @@ import java.util.List;
 
 public class SingleLogcatReader extends AbsLogcatReader {
 
-    private static final String TAG="SingleLogcatReader";
+    private static final String TAG = "SingleLogcatReader";
 
     private Process logcatProcess;
     private BufferedReader bufferedReader;
@@ -46,7 +45,6 @@ public class SingleLogcatReader extends AbsLogcatReader {
     public void killQuietly() {
         if (logcatProcess != null) {
             RuntimeHelper.destroy(logcatProcess);
-            LogHelper.d(TAG,"killed 1 logcat process");
         }
     }
 
