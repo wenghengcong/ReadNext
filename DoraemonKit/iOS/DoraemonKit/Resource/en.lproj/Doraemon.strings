@@ -104,6 +104,7 @@
     "H5任意门"                                 =  "Browser";
     "清除搜索历史"                            = "Clear search history";
     "模拟器不支持扫码功能"                      = "The simulator does not support scanning";
+    "扫描二维码"                             = "QR Scanning";
     "点击跳转"                                =   "Click to jump";
     "Doraemon内置浏览器"                          = "Doraemon Built-in browser";
     "链接不能为空"                        =   "url can not be nil";
@@ -298,6 +299,16 @@
     "第一个view出现时间"                              = "first view appear time";
     "可交互时间"                              = "interactive time";
     
+    //设置
+    "设置"                                           = "Settings";
+    "工具管理"                                        = "Kit Manager";
+    "编辑"                                           = "Edit";
+    "完成"                                           = "Done";
+    "是否保存已编辑的内容"                              = "Whether to save the edited content";
+    "保存成功"                                        = "Saved successfully";
+    "还原"                                           = "Reset";
+    "是否还原到初始状态"                                = "Whether to reset to the initial state";
+    "每一个分组至少保留一项"                             = "Keep at least one item in each section";
     
     //其他
     "提示"                                      =   "Tip";
@@ -311,4 +322,5 @@
     "Doraemon关闭之后需要重启App才能重新打开"   =   "Reboot to open Doraemon";
     "复制"                                           = "Copy";
     "删除"                                           = "Delete";
+
 }

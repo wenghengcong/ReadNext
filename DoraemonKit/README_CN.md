@@ -1,8 +1,8 @@
 <div align="center">    
  <img src="https://javer.oss-cn-shanghai.aliyuncs.com/doraemon/github/DoraemonKit_github.png" width = "150" height = "150" alt="DoraemonKit" align=left />
  <img src="https://img.shields.io/github/license/didi/DoraemonKit.svg" align=left />
- <img src="https://img.shields.io/badge/Android-3.1.4-blue.svg" align=left />
- <img src="https://img.shields.io/badge/iOS-3.0.1-yellow.svg" align=left />
+ <img src="https://img.shields.io/badge/Android-3.1.6-blue.svg" align=left />
+ <img src="https://img.shields.io/badge/iOS-3.0.2-yellow.svg" align=left />
  <img src="https://img.shields.io/badge/miniapp-0.0.1-red.svg" align=left />
  <img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg" align=left />
 </div>
@@ -20,6 +20,11 @@
 
 > [English Readme](README.md)
 
+**社区活动**
+
+>dokit-android: [dokit-kotlin](https://github.com/didi/DoraemonKit/issues/531)
+>
+>dokit-iOS: [dokit-swift](https://github.com/didi/DoraemonKit/issues/493)
 
 ## 开发背景
 
@@ -29,9 +34,11 @@ DoraemonKit 是一个功能平台，能够让每一个 App 快速接入一些常
 
 **简单总结**
 
-1、DoraemonKit 能够快速让你的业务测试代码能够在这里统一管理，统一收口；   
-2、DoraemonKit 内置很多常用的工具，避免重复实现，一次接入，你将会拥有强大的工具集合。
-3、搭配[dokit](https://www.dokit.cn)平台，方便你进行**数据mock**以及记录你的每一次**健康体检**用例
+1、DoraemonKit 能够快速让你的业务测试代码能够在这里统一管理，统一收口；  
+
+2、DoraemonKit 内置很多常用的工具，避免重复实现，一次接入，你将会拥有强大的工具集合；
+
+3、搭配[dokit](https://www.dokit.cn)平台，方便你进行**数据mock**以及记录你的每一次**健康体检**用例。
 
 ## 效果演示
 
@@ -111,6 +118,9 @@ tips ： 如果使用我们滴滴优秀的开源跨端方案 [chameleon](https:/
 - [开源组件 DoraemonKit 之 Android 版本技术实现（二）](https://juejin.im/post/5c73db105188256ec63f13bb)
 - [DoKit支持Activity启动耗时统计方案](https://juejin.im/post/5d70bc3051882571ed61e407)
 - [DoKit 微信小程序SDK对外发布](https://juejin.im/post/5d9bf252518825095c3c5e32)
+- [滴滴DoKit2.0 - 泛前端开发者的百宝箱](https://juejin.im/post/5dc3cdfa51882538d22d5948)
+- [滴滴正式发布开源客户端研发助手 DoKit 3.0，新特性解读](https://juejin.im/post/5e818e29f265da4804697d25)
+- [滴滴DoKit Android核心原理揭秘之函数耗时](https://juejin.im/post/5eba5ce15188256d6f268c98)
 
 ## 更新日志
 
@@ -196,7 +206,7 @@ tips ： 如果使用我们滴滴优秀的开源跨端方案 [chameleon](https:/
 
 ## 协议
 
-<img alt="Apache-2.0 license" src="https://lucene.apache.org/images/mantle-power.png" width="128">
+<img alt="Apache-2.0 license" src="https://www.apache.org/img/ASF20thAnniversary.jpg" width="128">
 
 DoraemonKit 基于 Apache-2.0 协议进行分发和使用，更多信息参见 [协议文件](LICENSE)。
 
