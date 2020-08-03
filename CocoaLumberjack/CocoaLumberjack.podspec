@@ -1,7 +1,7 @@
 Pod::Spec.new do |s|
 
   s.name     = 'CocoaLumberjack'
-  s.version  = '3.6.1'
+  s.version  = '3.6.2'
   s.license  = 'BSD'
   s.summary  = 'A fast & simple, yet powerful & flexible logging framework for Mac and iOS.'
   s.homepage = 'https://github.com/CocoaLumberjack/CocoaLumberjack'
@@ -18,7 +18,7 @@ Pod::Spec.new do |s|
 
   s.preserve_paths = 'README.md'
 
-  s.ios.deployment_target     = '8.0'
+  s.ios.deployment_target     = '9.0'
   s.osx.deployment_target     = '10.10'
   s.watchos.deployment_target = '3.0'
   s.tvos.deployment_target    = '9.0'
