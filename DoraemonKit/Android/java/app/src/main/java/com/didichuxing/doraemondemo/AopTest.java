@@ -1,7 +1,5 @@
 package com.didichuxing.doraemondemo;
 
-import android.util.Log;
-
 /**
  * ================================================
  * 作    者：jint（金台）
@@ -25,9 +23,10 @@ public class AopTest {
 
 
     public void test() {
-        setName("jint");
-        String newName = getName();
-        Log.i("TAG", "newName====>" + newName);
+//        setName("jint");
+//        String newName = getName();
+//        Log.i("TAG", "newName====>" + newName);
+
     }
 
 

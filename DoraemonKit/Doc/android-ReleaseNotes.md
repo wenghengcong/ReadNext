@@ -1,5 +1,12 @@
 DoraemonKit-Android releases
 ===
+## 3.2.0 & 3.0.8.0
+1.文件同步助手功能已推出。
+详细文档参考：
+http://xingyun.xiaojukeji.com/docs/dokit/#/FileList
+
+2.github issues fixed
+
 ## 3.1.8 & 3.0.7.2
 1.适配AGP 4.0
 

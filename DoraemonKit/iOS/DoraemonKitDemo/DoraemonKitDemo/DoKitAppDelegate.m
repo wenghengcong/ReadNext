@@ -29,9 +29,10 @@
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
     
-    //[DoraemonTimeProfiler startRecord];
+    [DoraemonTimeProfiler startRecord];
     
-    //[[self class] handleCCrashReportWrap];
+    [[self class] handleCCrashReportWrap];
+    //HCLEARN: 设置处理 OC 异常，C 语言信号无法捕获
     NSSetUncaughtExceptionHandler(&uncaughtExceptionHandler);
 
     for (int i=0; i<10; i++) {

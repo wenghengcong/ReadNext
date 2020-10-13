@@ -51,6 +51,8 @@ static NSString *DoraemonHomeCloseCellID = @"DoraemonHomeCloseCellID";
 #if defined(__IPHONE_13_0) && (__IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_13_0)
     }
 #endif
+    
+    // 数据
     NSMutableArray *dataArray = [[DoraemonCacheManager sharedInstance] allKitShowManagerData];
     _dataArray = dataArray;
     [self.view addSubview:self.collectionView];

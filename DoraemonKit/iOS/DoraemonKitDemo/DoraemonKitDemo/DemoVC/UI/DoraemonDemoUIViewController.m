@@ -9,6 +9,7 @@
 #import "DoraemonDemoUIViewController.h"
 #import <DoraemonKit/UIColor+Doraemon.h>
 #import "DoraemonDefine.h"
+#import <SDWebImage/SDWebImage.h>
 
 @interface DoraemonDemoUIViewController ()
 
@@ -60,6 +61,12 @@
     
     [self.view addSubview:button];
     
+    [SDImageCache sharedImageCache].config.shouldCacheImagesInMemory = NO;
+    [SDImageCache sharedImageCache].config.shouldUseWeakMemoryCache = NO;
+
+    UIImageView *bigImageView = [[UIImageView alloc] initWithFrame:CGRectMake(100, 600, 200, 100)];
+    [bigImageView sd_setImageWithURL:[NSURL URLWithString:@"https://images.unsplash.com/photo-1600103376798-02a03a7c7cfe?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=3747&q=80"]];
+    [self.view addSubview:bigImageView];
     
 }
 

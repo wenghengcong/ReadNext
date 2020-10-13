@@ -26,4 +26,5 @@ target :'DoraemonKitDemo' do
   #pod 'fishhook', :git => 'git@github.com:facebook/fishhook.git', :configurations => ['Debug']
   pod 'YYDebugDatabase', :git => 'https://github.com/y500/YYDebugDatabase.git'
   #pod 'YYDebugDatabase', '2.'
+  pod 'LookinServer', :configurations => ['Debug']
 end
